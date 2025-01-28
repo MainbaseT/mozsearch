@@ -3,7 +3,10 @@ use std::borrow;
 use include_dir::{include_dir, Dir};
 use liquid::Template;
 
-use super::liquid_exts::{CompactPathlikeFilterParser, FileExtFilterParser, JsonFilterParser, StripPrefixOrEmptyFilterParser, EnsureBugUrlFilterParser};
+use super::liquid_exts::{
+    CompactPathlikeFilterParser, EnsureBugUrlFilterParser, FileExtFilterParser, JsonFilterParser,
+    StripPrefixOrEmptyFilterParser,
+};
 
 static TEMPLATE_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/templates");
 
@@ -21,7 +24,7 @@ impl liquid::partials::PartialSource for StaticTemplateSource {
 
     fn try_get<'a>(&'a self, name: &str) -> Option<borrow::Cow<'a, str>> {
         match TEMPLATE_DIR.get_file(name) {
-            Some(file) => file.contents_utf8().map(|s| borrow::Cow::from(s)),
+            Some(file) => file.contents_utf8().map(borrow::Cow::from),
             _ => None,
         }
     }

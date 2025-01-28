@@ -4,7 +4,7 @@ set -x # Show commands
 set -eu # Errors/undefined vars are fatal
 set -o pipefail # Check all commands in a pipeline
 
-if [ $# -ne 4 ]
+if [ $# -ne 5 ]
 then
     echo "Usage: output.sh config_repo config-file.json tree_name url-map.json"
     exit 1
@@ -14,6 +14,7 @@ CONFIG_REPO=$(realpath $1)
 CONFIG_FILE=$(realpath $2)
 TREE_NAME=$3
 URL_MAP_PATH=$4
+DOC_TREES_PATH=$5
 
 # let's put the "parallel" output in a new `diags` directory, as we're still
 # seeing really poor output-file performance in bug 1567724.
@@ -64,16 +65,12 @@ TMPDIR_PATH=${DIAGS_DIR}
 #   which is obviously suboptimal.
 parallel --jobs 8 --pipepart -a $INDEX_ROOT/all-files --files --joblog $JOBLOG_PATH --tmpdir $TMPDIR_PATH \
     --block -1 --halt 2 --env RUST_BACKTRACE \
-    "$MOZSEARCH_PATH/tools/target/release/output-file $CONFIG_FILE $TREE_NAME $URL_MAP_PATH - 2>&1"
+    "$MOZSEARCH_PATH/tools/target/release/output-file $CONFIG_FILE $TREE_NAME $URL_MAP_PATH $DOC_TREES_PATH - 2>&1"
 
 TOOL_CMD="search-files --limit=0 --include-dirs --group-by=directory | batch-render dir"
 SEARCHFOX_SERVER=${CONFIG_FILE} \
     SEARCHFOX_TREE=${TREE_NAME} \
     $MOZSEARCH_PATH/tools/target/release/searchfox-tool "$TOOL_CMD"
-
-#HG_ROOT=$(jq -r ".trees[\"${TREE_NAME}\"].hg_root" ${CONFIG_FILE})
-#cat $INDEX_ROOT/repo-files $INDEX_ROOT/objdir-files > ${TMPDIR:-/tmp}/dirs
-#js $MOZSEARCH_PATH/scripts/output-dir.js $FILES_ROOT $INDEX_ROOT "$HG_ROOT" $MOZSEARCH_PATH $OBJDIR $TREE_NAME ${TMPDIR:-/tmp}/dirs
 
 TOOL_CMD="render search-template"
 SEARCHFOX_SERVER=${CONFIG_FILE} \
@@ -89,6 +86,3 @@ TOOL_CMD="render settings"
 SEARCHFOX_SERVER=${CONFIG_FILE} \
     SEARCHFOX_TREE=${TREE_NAME} \
     $MOZSEARCH_PATH/tools/target/release/searchfox-tool "$TOOL_CMD"
-
-#js $MOZSEARCH_PATH/scripts/output-template.js $FILES_ROOT $INDEX_ROOT $MOZSEARCH_PATH $TREE_NAME
-#js $MOZSEARCH_PATH/scripts/output-help.js $CONFIG_REPO/help.html $INDEX_ROOT $MOZSEARCH_PATH $TREE_NAME

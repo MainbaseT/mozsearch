@@ -18,6 +18,7 @@ expression: "&to_value(jvl).unwrap()"
           "parentsym": "T_outerNS::PracticalArt",
           "implKind": "",
           "sizeBytes": null,
+          "alignmentBytes": null,
           "ownVFPtrBytes": null,
           "bindingSlots": [],
           "ontologySlots": [],
@@ -38,7 +39,7 @@ expression: "&to_value(jvl).unwrap()"
           "args": []
         },
         "jumps": {
-          "def": "big_cpp.cpp#453"
+          "def": "big_cpp.cpp#426"
         }
       }
     }

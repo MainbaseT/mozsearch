@@ -1,9 +1,8 @@
-
 //! A description of this very interesting module.
 //!
 //! This is an overview of yada yada yada...
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct MyType(());
 
 impl MyType {
@@ -33,7 +32,9 @@ extern "C" {
 }
 
 impl MyTrait for MyType {
-    fn do_bar() -> i32 { 100 }
+    fn do_bar() -> i32 {
+        100
+    }
 }
 
 #[cfg(test)]

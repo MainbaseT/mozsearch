@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en-US" class="">
+<head>
+  <meta charset="utf-8" />
+  <link href="/tests/static/icons/search.png" rel="shortcut icon">
+  <title>webtest - mozsearch</title>
+<style>
+body {
+  margin: 0;
+}
+#frame-location-and-title {
+  width: 100vw;
+  height: 24px;
+  display: grid;
+  grid-template-columns: 50vw 50vw;
+}
+#frame-location {
+  height: 24px;
+  box-sizing: border-box;
+}
+#frame-title {
+  height: 24px;
+  box-sizing: border-box;
+}
+#frame {
+  width: calc(100vw);
+  height: calc(100vh - 8px - 24px);
+  box-sizing: border-box;
+}
+</style>
+<script src="./head.js"></script>
+</head>
+
+<body onload="TestHarness.onBodyLoad()">
+<div id="frame-location-and-title"><input id="frame-location" type="text" readonly><input id="frame-title" type="text" readonly></div>
+<iframe id="frame" src="/"></iframe>
+</body>
+
+</html>

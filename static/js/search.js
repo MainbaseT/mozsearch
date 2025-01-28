@@ -32,6 +32,8 @@ var Dxr = new (class Dxr {
       path: document.getElementById("path-bubble"),
     };
 
+    this.setupColSelector();
+
     this.startSearchTimer = null;
     // The timer to move to the next url.
     this.historyTimer = null;
@@ -46,7 +48,6 @@ var Dxr = new (class Dxr {
       once: true,
     });
 
-    this.fields.query.addEventListener("input", () => this.startSearchSoon());
     // XXX hacky mechanism so that we only run this on pages with a "search"
     // header rather than a "query" header.  We should refactor this and the
     // general code listing generation so that we:
@@ -54,6 +55,7 @@ var Dxr = new (class Dxr {
     //   choice even on any page.
     // - explicitly understand if it's operating in search or query mode.
     if (this.fields.path) {
+      this.fields.query.addEventListener("input", () => this.startSearchSoon());
       this.fields.path.addEventListener("input", () => this.startSearchSoon());
       this.fields.regexp.addEventListener("change", () => this.startSearch());
       this.fields.caseSensitive.addEventListener("change", event => {
@@ -107,11 +109,8 @@ var Dxr = new (class Dxr {
 
     this.hideBubbles();
 
-    let url = new URL(this.searchUrl, window.location);
-    url.searchParams.set("q", this.fields.query.value);
-    url.searchParams.set("path", this.fields.path.value.trim());
-    url.searchParams.set("case", this.fields.caseSensitive.checked);
-    url.searchParams.set("regexp", this.fields.regexp.checked);
+    let url = this.constructURL();
+
     let controller = new AbortController();
 
     this.fetchController = controller;
@@ -141,9 +140,31 @@ var Dxr = new (class Dxr {
     }
 
     populateResults(results, false, false);
+
+    this.updateHistory(url);
+  }
+
+  constructURL() {
+    let url = new URL(this.searchUrl, window.location);
+    url.searchParams.set("q", this.fields.query.value);
+    if (this.fields.path) {
+      url.searchParams.set("path", this.fields.path.value.trim());
+    }
+    if (this.fields.caseSensitive) {
+      url.searchParams.set("case", this.fields.caseSensitive.checked);
+    }
+    if (this.fields.regexp) {
+      url.searchParams.set("regexp", this.fields.regexp.checked);
+    }
+    return url;
+  }
+
+  updateHistory(url) {
     this.historyTimer = setTimeout(() => {
       this.historyTimer = null;
       window.history.pushState({}, "", url.href);
+
+      Panel.updateDebugSectionForLocation();
     }, this.timeouts.history);
   }
 
@@ -224,6 +245,116 @@ var Dxr = new (class Dxr {
       this.hideBubble(kind);
     }
   }
+
+  setupColSelector() {
+    this.colSelector = document.querySelector("#symbol-tree-table-col-selector");
+    if (!this.colSelector) {
+      return;
+    }
+    this.symbolTreeTableList = document.querySelector("#symbol-tree-table-list");
+    if (!this.symbolTreeTableList) {
+      return;
+    }
+
+    const defaultCols = {
+      name: true,
+      type: false,
+      line: true,
+    };
+
+    this.cols = {};
+    for (const [key, defaultValue] of Object.entries(defaultCols)) {
+      const node = document.querySelector("#col-show-" + key);
+      node.addEventListener("change", () => {
+        this.onColChange();
+      });
+      this.cols[key] = {
+        node: node,
+        currentValue: defaultValue,
+        defaultValue: defaultValue,
+      };
+    }
+
+    this.parseColQuery();
+  }
+
+  parseColQuery() {
+    if (!this.colSelector) {
+      return;
+    }
+
+    let query = this.fields.query.value;
+
+    for (const m of query.matchAll(/(show|hide)-cols:([a-z,]+)/g)) {
+      const show = m[1] == "show";
+      const cols = m[2].split(/,/);
+
+      for (const col of cols) {
+        this.cols[col].currentValue = show;
+      }
+    }
+
+    this.updateColCheckbox();
+  }
+
+  updateColCheckbox() {
+    for (const [key, obj] of Object.entries(this.cols)) {
+      obj.node.checked = obj.currentValue;
+    }
+  }
+
+  onColChange() {
+    for (const [key, obj] of Object.entries(this.cols)) {
+      obj.currentValue = obj.node.checked;
+
+      if (!obj.defaultValue) {
+        this.symbolTreeTableList.classList.toggle("show-" + key, obj.currentValue);
+      } else {
+        this.symbolTreeTableList.classList.toggle("hide-" + key, !obj.currentValue);
+      }
+    }
+
+    this.updateColQuery();
+  }
+
+  getShowCols() {
+    const showCols = [];
+    for (const [key, obj] of Object.entries(this.cols)) {
+      if (obj.currentValue != obj.defaultValue && !obj.defaultValue) {
+        showCols.push(key);
+      }
+    }
+    return showCols.join(",");
+  }
+
+  getHideCols() {
+    const hideCols = [];
+    for (const [key, obj] of Object.entries(this.cols)) {
+      if (obj.currentValue != obj.defaultValue && obj.defaultValue) {
+        hideCols.push(key);
+      }
+    }
+    return hideCols.join(",");
+  }
+
+  updateColQuery() {
+    const showCols = this.getShowCols();
+    const hideCols = this.getHideCols();
+
+    let query = this.fields.query.value;
+    query = query.replace(/ +(show|hide)-cols:([a-z,]+)/g, "");
+
+    if (showCols) {
+      query += " show-cols:" + showCols;
+    }
+    if (hideCols) {
+      query += " hide-cols:" + hideCols;
+    }
+
+    this.fields.query.value = query;
+    let url = this.constructURL();
+    this.updateHistory(url);
+  }
 })();
 
 function hashString(string) {
@@ -271,6 +402,9 @@ function populateResults(data, full, jumpToSingle) {
   var title = data["*title*"];
   if (title) {
     document.title = title + " - mozsearch";
+
+    // Tell the title to webtest.
+    document.dispatchEvent(new Event("titlechanged"));
   }
   var timed_out = data["*timedout*"];
 
@@ -279,7 +413,7 @@ function populateResults(data, full, jumpToSingle) {
   window.scrollTo(0, 0);
 
   function makeURL(path) {
-    return "/" + Dxr.tree + "/source/" + path;
+    return "/" + Dxr.tree + "/source/" + encodeURI(path);
   }
 
   function makeSearchUrl(q) {
@@ -491,46 +625,82 @@ function populateResults(data, full, jumpToSingle) {
   let container = document.getElementById("content");
   // Clobber any additional classes that existed on the content container.
   container.setAttribute("class", "content");
-  container.innerHTML = "";
 
-  let limitWarning = "";
-  if (limits_hit.length > 0) {
-    limitWarning = `<div><b>Warning</b>: The following limits were hit in your search: ${limits_hit.join(", ")}</div>`;
+  const items = [];
+
+  const breadcrumbs = document.querySelector(".breadcrumbs");
+  if (breadcrumbs) {
+    // Preserve breadcrumbs if present.
+    items.push(breadcrumbs);
+
+    // Breadcrumbs is hidden in some page.
+    breadcrumbs.style.display = "inline-block";
+
+    // Remove path and symbols.
+    //
+    // NOTE: Search can be initiated from source or directory listing,
+    //       where breadcrumbs has path for the file or directory.
+    let foundSep = false;
+    for (const node of [...breadcrumbs.childNodes]) {
+      if (node instanceof HTMLElement) {
+        if (node.classList.contains("path-separator")) {
+          foundSep = true;
+        }
+      }
+      if (foundSep) {
+        breadcrumbs.removeChild(node);
+      }
+    }
+  }
+  const navigationPanel = document.querySelector("#panel");
+  if (navigationPanel) {
+    // Preserve navigation panel if present.
+    items.push(navigationPanel);
+
+    try {
+      Panel.prepareForSearch();
+    } catch {}
   }
 
-  let timeoutWarning = timed_out
-    ? "<div><b>Warning</b>: Results may be incomplete due to server-side search timeout!</div>"
-    : "";
+  const header = document.createElement("div");
+  header.classList.add("search-result-header");
+  items.push(header);
 
   if (!fileCount) {
-    container.insertAdjacentHTML(
-      "beforeend",
-      "<span>No results for current query.</span>"
-    );
-    if (limitWarning) {
-      container.insertAdjacentHTML("beforeend", limitWarning);
-    }
-    if (timeoutWarning) {
-      container.insertAdjacentHTML("beforeend", timeoutWarning);
-    }
+    const div = document.createElement("div");
+    div.textContent = "No results for current query.";
+    header.append(div);
   } else {
     if (count) {
-      container.insertAdjacentHTML(
-        "beforeend",
-        `<div>Number of results: ${count} (maximum is around 4000)</div>`
-      );
+      const div = document.createElement("div");
+      div.textContent = `Number of results: ${count} (maximum is around 4000)`;
+      header.append(div);
     }
-    if (limitWarning) {
-      container.insertAdjacentHTML("beforeend", limitWarning);
-    }
-    if (timeoutWarning) {
-      container.insertAdjacentHTML("beforeend", timeoutWarning);
-    }
+  }
 
+  if (limits_hit.length > 0) {
+    const div = document.createElement("div");
+    const b = document.createElement("b");
+    b.textContent = "Warning";
+    div.append(b);
+    div.append(`: The following limits were hit in your search: ${limits_hit.join(", ")}`);
+    header.append(div);
+  }
+
+  let timeoutWarning = null;
+  if (timed_out) {
+    const div = document.createElement("div");
+    const b = document.createElement("b");
+    b.textContent = "Warning";
+    div.append(b);
+    div.append(": Results may be incomplete due to server-side search timeout!");
+    header.append(div);
+  }
+
+  if (fileCount) {
     var table = document.createElement("table");
     table.className = "results";
-
-    container.appendChild(table);
+    items.push(table);
 
     var counter = 0;
 
@@ -645,7 +815,7 @@ function populateResults(data, full, jumpToSingle) {
 
     table.innerHTML = html;
 
-    for (let element of document.querySelectorAll(".expando")) {
+    for (let element of table.querySelectorAll(".expando")) {
       element.addEventListener("click", onExpandoClick);
     }
 
@@ -658,6 +828,10 @@ function populateResults(data, full, jumpToSingle) {
       }, 750);
     }
   }
+
+  container.replaceChildren(...items);
+
+  Dxr.parseColQuery();
 }
 
 window.showSearchResults = function (results) {

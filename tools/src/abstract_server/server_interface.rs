@@ -28,7 +28,7 @@ impl From<regex::Error> for ServerError {
     fn from(err: regex::Error) -> ServerError {
         ServerError::StickyProblem(ErrorDetails {
             layer: ErrorLayer::BadInput,
-            message: format!("bad regexp: {}", err.to_string()),
+            message: format!("bad regexp: {}", err),
         })
     }
 }
@@ -46,7 +46,7 @@ impl From<tokio::task::JoinError> for ServerError {
         */
         ServerError::StickyProblem(ErrorDetails {
             layer: ErrorLayer::RuntimeInvariantViolation,
-            message: format!("task panicked?: {}", err.to_string()),
+            message: format!("task panicked?: {}", err),
         })
     }
 }
@@ -55,7 +55,7 @@ impl From<liquid::Error> for ServerError {
     fn from(err: liquid::Error) -> ServerError {
         ServerError::StickyProblem(ErrorDetails {
             layer: ErrorLayer::ConfigLayer,
-            message: format!("Liquid error: {}", err.to_string()),
+            message: format!("Liquid error: {}", err),
         })
     }
 }
@@ -293,7 +293,7 @@ pub trait AbstractServer {
 
     /// Fetch the contents of the analysis file for the given searchfox
     /// tree-local path, decompressing if it's compressed.
-    async fn fetch_raw_analysis(&self, sf_path: &str) -> Result<BoxStream<Value>>;
+    async fn fetch_raw_analysis<'a>(&self, sf_path: &str) -> Result<BoxStream<'a, Value>>;
 
     /// Fetch the contents of a raw (not HTML rendered) source file
     /// corresponding to the indexed revision like you would get out of revision
@@ -302,6 +302,12 @@ pub trait AbstractServer {
     /// TODO: In the future this should probably take a revision descriptor so
     /// we can actually check the source file out if needed.
     async fn fetch_raw_source(&self, sf_path: &str) -> Result<String>;
+
+    /// Fetch the lines in the rendered HTML file.
+    ///
+    /// Returns a tuple of a list of lines, 0-th item for line 1,
+    /// and a JSON string for the SYM_INFO object.
+    async fn fetch_formatted_lines(&self, sf_path: &str) -> Result<(Vec<String>, String)>;
 
     /// Fetch the contents of a rendered HTML file, decompressing if it's
     /// compressed.  If `is_file` is true, this will be from the INDEX/file

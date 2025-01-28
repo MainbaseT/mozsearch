@@ -1,10 +1,7 @@
 use async_trait::async_trait;
 use bitflags::bitflags;
 use clap::{Args, ValueEnum};
-use serde::{
-    ser::SerializeStruct,
-    Serialize, Serializer,
-};
+use serde::{ser::SerializeStruct, Serialize, Serializer};
 use serde_json::{json, to_string_pretty, Value};
 use std::{
     cmp::Ordering,
@@ -70,11 +67,16 @@ pub struct SymbolTreeTable {
     pub node_set: SymbolGraphNodeSet,
     pub platforms: Vec<String>,
     pub rows: Vec<SymbolTreeTableNode>,
+
+    /// Symbols to put into SYM_INFO, in addition to node_set.
+    pub extra_syms: HashMap<String, Value>,
 }
 
 #[derive(Serialize)]
 pub struct SymbolTreeTableList {
     pub tables: Vec<SymbolTreeTable>,
+    #[serde(rename = "className")]
+    pub class_name: Option<String>,
 }
 
 impl SymbolTreeTableList {
@@ -84,9 +86,12 @@ impl SymbolTreeTableList {
             for sym_info in table.node_set.symbol_crossref_infos.iter() {
                 let info = sym_info.crossref_info.clone();
                 jumprefs.insert(
-                    sym_info.symbol.clone(),
+                    sym_info.symbol,
                     convert_crossref_value_to_sym_info_rep(info, &sym_info.symbol, None),
                 );
+            }
+            for (sym, info) in &table.extra_syms {
+                jumprefs.insert(ustr(sym.as_str()), info.clone());
             }
         }
 
@@ -151,17 +156,40 @@ pub enum BasicMarkup {
 }
 
 #[derive(Serialize)]
+pub struct SymbolTreeTableAlignmentAndSize {
+    pub alignment: String,
+    pub size: String,
+}
+
+impl SymbolTreeTableAlignmentAndSize {
+    pub fn new(alignment: String, size: String) -> Self {
+        Self { alignment, size }
+    }
+}
+
+#[derive(Serialize)]
 pub struct SymbolTreeTableNode {
     pub name: String,
     pub symbols: String,
+    #[serde(rename = "isBaseClass")]
+    pub is_base_class: bool,
+    #[serde(rename = "alignmentAndSize")]
+    pub alignment_and_size: Vec<SymbolTreeTableAlignmentAndSize>,
     pub items: Vec<SymbolTreeTableItem>,
 }
 
 impl SymbolTreeTableNode {
-    pub fn new(name: String, symbols: String) -> Self {
+    pub fn new(
+        name: String,
+        symbols: String,
+        is_base_class: bool,
+        alignment_and_size: Vec<SymbolTreeTableAlignmentAndSize>,
+    ) -> Self {
         Self {
-            name: name,
-            symbols: symbols,
+            name,
+            symbols,
+            is_base_class,
+            alignment_and_size,
             items: vec![],
         }
     }
@@ -180,16 +208,18 @@ pub struct SymbolTreeTableField {
     pub name: String,
     pub symbols: String,
     pub types: Vec<SymbolTreeTableFieldType>,
+    pub lines: Vec<String>,
     #[serde(rename = "offsetAndSize")]
-    pub offset_and_size: Vec<Option<SymbolTreeTableFieldOffsetAndSize>>
+    pub offset_and_size: Vec<Option<SymbolTreeTableFieldOffsetAndSize>>,
 }
 
 impl SymbolTreeTableField {
     pub fn new(name: String, symbols: String) -> Self {
         Self {
-            name: name,
-            symbols: symbols,
+            name,
+            symbols,
             types: vec![],
+            lines: vec![],
             offset_and_size: vec![],
         }
     }
@@ -203,10 +233,7 @@ pub struct SymbolTreeTableFieldType {
 
 impl SymbolTreeTableFieldType {
     pub fn new(name: String, symbols: String) -> Self {
-        Self {
-            name: name,
-            symbols: symbols,
-        }
+        Self { name, symbols }
     }
 }
 
@@ -218,10 +245,13 @@ pub struct SymbolTreeTableFieldOffsetAndSize {
 
 impl SymbolTreeTableFieldOffsetAndSize {
     pub fn new(offset: String, size: String) -> Self {
-        Self {
-            offset: offset,
-            size: size,
-        }
+        Self { offset, size }
+    }
+}
+
+impl Default for SymbolTreeTable {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -231,6 +261,7 @@ impl SymbolTreeTable {
             node_set: SymbolGraphNodeSet::new(),
             platforms: vec![],
             rows: vec![],
+            extra_syms: HashMap::new(),
         }
     }
 }
@@ -371,9 +402,7 @@ impl SymbolQuality {
 
 impl PartialOrd for SymbolQuality {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let self_rank = self.numeric_rank();
-        let other_rank = other.numeric_rank();
-        self_rank.partial_cmp(&other_rank)
+        Some(self.cmp(other))
     }
 }
 
@@ -385,7 +414,6 @@ impl Ord for SymbolQuality {
     }
 }
 
-///
 #[derive(Clone, Serialize)]
 pub enum OverloadKind {
     /// There's just too many overrides!  This would happen for
@@ -490,13 +518,13 @@ impl SymbolCrossrefInfo {
         if let Some(Value::String(s)) = self.crossref_info.pointer("/meta/pretty") {
             ustr(s)
         } else {
-            self.symbol.clone()
+            self.symbol
         }
     }
 
     pub fn get_method_symbols(&self) -> Option<Vec<Ustr>> {
         if let Some(Value::Array(arr)) = self.crossref_info.pointer("/meta/methods") {
-            if arr.len() == 0 {
+            if arr.is_empty() {
                 return None;
             }
             Some(
@@ -548,7 +576,7 @@ impl FlattenedResultsBundle {
     ) {
         self.content_type = "text/html".to_string();
         for path_kind_group in &mut self.path_kind_results {
-            path_kind_group.ingest_html_lines(&path_line_contents, before, after);
+            path_kind_group.ingest_html_lines(path_line_contents, before, after);
         }
     }
 }
@@ -563,12 +591,12 @@ pub struct FlattenedPathKindGroupResults {
 impl FlattenedPathKindGroupResults {
     pub fn accumulate_path_line_sets(
         &self,
-        mut path_line_sets: &mut UstrMap<HashSet<u32>>,
+        path_line_sets: &mut UstrMap<HashSet<u32>>,
         before: u32,
         after: u32,
     ) {
         for kind_group in &self.kind_groups {
-            kind_group.accumulate_path_line_sets(&mut path_line_sets, before, after);
+            kind_group.accumulate_path_line_sets(path_line_sets, before, after);
         }
     }
 
@@ -579,7 +607,7 @@ impl FlattenedPathKindGroupResults {
         after: u32,
     ) {
         for kind_group in &mut self.kind_groups {
-            kind_group.ingest_html_lines(&path_line_contents, before, after);
+            kind_group.ingest_html_lines(path_line_contents, before, after);
         }
     }
 }
@@ -640,12 +668,12 @@ pub struct FlattenedKindGroupResults {
 impl FlattenedKindGroupResults {
     pub fn accumulate_path_line_sets(
         &self,
-        mut path_line_sets: &mut UstrMap<HashSet<u32>>,
+        path_line_sets: &mut UstrMap<HashSet<u32>>,
         before: u32,
         after: u32,
     ) {
         for by_file in &self.by_file {
-            by_file.accumulate_path_line_sets(&mut path_line_sets, before, after);
+            by_file.accumulate_path_line_sets(path_line_sets, before, after);
         }
     }
 
@@ -656,7 +684,7 @@ impl FlattenedKindGroupResults {
         after: u32,
     ) {
         for by_file in &mut self.by_file {
-            by_file.ingest_html_lines(&path_line_contents, before, after);
+            by_file.ingest_html_lines(path_line_contents, before, after);
         }
     }
 }
@@ -674,9 +702,7 @@ impl FlattenedResultsByFile {
         before: u32,
         after: u32,
     ) {
-        let line_set = path_line_sets
-            .entry(self.file.clone())
-            .or_insert_with(|| HashSet::new());
+        let line_set = path_line_sets.entry(self.file).or_default();
         for span in &self.line_spans {
             let range = span.expand_range_in_isolation(before, after);
             for line in range.0..=range.1 {
@@ -853,7 +879,7 @@ pub struct TextFile {
 pub trait PipelineCommand: Debug {
     async fn execute(
         &self,
-        server: &Box<dyn AbstractServer + Send + Sync>,
+        server: &(dyn AbstractServer + Send + Sync),
         input: PipelineValues,
     ) -> Result<PipelineValues>;
 }
@@ -864,7 +890,7 @@ pub trait PipelineCommand: Debug {
 pub trait PipelineJunctionCommand: Debug {
     async fn execute(
         &self,
-        server: &Box<dyn AbstractServer + Send + Sync>,
+        server: &(dyn AbstractServer + Send + Sync),
         input: Vec<(String, PipelineValues)>,
     ) -> Result<PipelineValues>;
 }
@@ -898,7 +924,7 @@ impl NamedPipeline {
             let span = trace_span!("run_named_pipeline_step", cmd = ?cmd);
 
             match cmd
-                .execute(&server, cur_values)
+                .execute(server.as_ref(), cur_values)
                 .instrument(span.clone())
                 .await
             {
@@ -943,7 +969,7 @@ impl JunctionInvocation {
 
         let result = match self
             .command
-            .execute(&server, input_values)
+            .execute(server.as_ref(), input_values)
             .instrument(span.clone())
             .await
         {
@@ -986,7 +1012,7 @@ impl ServerPipeline {
             let span = trace_span!("run_pipeline_step", cmd = ?cmd);
 
             match cmd
-                .execute(&self.server, cur_values)
+                .execute(self.server.as_ref(), cur_values)
                 .instrument(span.clone())
                 .await
             {

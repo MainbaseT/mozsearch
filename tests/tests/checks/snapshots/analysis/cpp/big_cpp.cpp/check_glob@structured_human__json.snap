@@ -4,12 +4,13 @@ expression: "&json_results"
 ---
 [
   {
-    "loc": "00185:6-11",
+    "loc": "00178:6-11",
     "structured": 1,
     "pretty": "outerNS::Human",
     "sym": "T_outerNS::Human",
     "kind": "class",
     "sizeBytes": 16,
+    "alignmentBytes": 8,
     "supers": [
       {
         "sym": "T_outerNS::Thing",

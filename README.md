@@ -25,6 +25,12 @@ are a hassle.
 Can you already run "docker" on your command line and have it work?  Then you
 can skip this section!
 
+> [!WARNING]
+> If you're running docker on macOS, make sure the Rosetta option is disabled
+> in the Docker Desktop settings, otherwise you may run into segfaults on
+> installing rust components. See https://github.com/rust-lang/rustup/issues/3902
+> and friends.
+
 #### Important Docker Licensing Notes
 
 Docker has changed their licensing of their "Docker Desktop" packages.  We do
@@ -181,6 +187,23 @@ Once you've done that, you might want to read the
 [Manual Indexing doc](docs/manual-indexing.md) for more details on what's
 happening under the hood when you run the above make rule.
 
+
+### Testing UI
+
+You can also test the UI part of searchfox by the following inside the docker:
+
+```
+make webtest
+```
+
+If you want to run specific tests, you can run the following, where the
+`FILTER` is a substring-match against the test file's path, which
+
+```
+./scripts/webtest.sh FILTER
+```
+
+For more details, please refer [the webtest document](docs/webtest.md).
 
 ### Testing locally with blame using the "searchfox" test config
 

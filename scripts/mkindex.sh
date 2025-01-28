@@ -27,6 +27,12 @@ TREE_NAME=$3
 # arise.
 
 export PYTHONPATH=$MOZSEARCH_PATH/scripts
+
+# activate the venv we created for livegrep so we have access to the grpc
+# dependencies.
+LIVEGREP_VENV=$HOME/livegrep-venv
+source $LIVEGREP_VENV/bin/activate
+
 # This was previously "full" but "1" is much more readable.  Obviously change
 # this back if we end up missing things.
 #
@@ -67,6 +73,7 @@ $MOZSEARCH_PATH/scripts/objdir-mkdirs.sh
 date
 
 URL_MAP_PATH=$INDEX_ROOT/aliases/url-map.json
+DOC_TREES_MAP=$INDEX_ROOT/doc-trees.json
 
 $MOZSEARCH_PATH/scripts/process-chrome-map.py $GIT_ROOT $URL_MAP_PATH $INDEX_ROOT/*.chrome-map.json || handle_tree_error "process-chrome-map.py"
 
@@ -85,6 +92,10 @@ $MOZSEARCH_PATH/scripts/css-analyze.sh $CONFIG_FILE $TREE_NAME || handle_tree_er
 date
 
 $MOZSEARCH_PATH/scripts/idl-analyze.sh $CONFIG_FILE $TREE_NAME || handle_tree_error "idl-analyze.sh"
+
+date
+
+$MOZSEARCH_PATH/scripts/staticprefs-analyze.sh $CONFIG_FILE $TREE_NAME || handle_tree_error "idl-analyze.sh"
 
 date
 
@@ -113,7 +124,7 @@ $MOZSEARCH_PATH/scripts/crossref.sh $CONFIG_FILE $TREE_NAME $ANALYSIS_FILES_PATH
 
 date
 
-$MOZSEARCH_PATH/scripts/output.sh $CONFIG_REPO $CONFIG_FILE $TREE_NAME $URL_MAP_PATH || handle_tree_error "output.sh"
+$MOZSEARCH_PATH/scripts/output.sh $CONFIG_REPO $CONFIG_FILE $TREE_NAME $URL_MAP_PATH $DOC_TREES_MAP || handle_tree_error "output.sh"
 
 date
 

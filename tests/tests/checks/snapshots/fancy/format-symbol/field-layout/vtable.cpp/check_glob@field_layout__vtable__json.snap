@@ -19,6 +19,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::vtable::Sub1a",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -46,6 +47,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::vtable::Sub1b",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -73,6 +75,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::vtable::Sub2",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -100,6 +103,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::vtable::Sub3",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -127,6 +131,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::vtable::SubSub",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -153,6 +158,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 8,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": 8,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -223,6 +229,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 8,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": 8,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -292,6 +299,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 1,
+            "alignmentBytes": 1,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -381,6 +389,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 16,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -433,6 +442,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#24",
                 "pretty": "field_layout::vtable::Sub1a::x",
                 "sym": "F_<T_field_layout::vtable::Sub1a>_x",
                 "type": "unsigned char",
@@ -465,6 +475,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 16,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -517,6 +528,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#30",
                 "pretty": "field_layout::vtable::Sub1b::y",
                 "sym": "F_<T_field_layout::vtable::Sub1b>_y",
                 "type": "unsigned char",
@@ -549,6 +561,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 16,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -601,6 +614,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#36",
                 "pretty": "field_layout::vtable::Sub2::w",
                 "sym": "F_<T_field_layout::vtable::Sub2>_w",
                 "type": "unsigned char",
@@ -633,6 +647,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 16,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": 8,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -685,6 +700,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#42",
                 "pretty": "field_layout::vtable::Sub3::v",
                 "sym": "F_<T_field_layout::vtable::Sub3>_v",
                 "type": "unsigned char",
@@ -717,6 +733,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 64,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -784,6 +801,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#48",
                 "pretty": "field_layout::vtable::SubSub::z",
                 "sym": "F_<T_field_layout::vtable::SubSub>_z",
                 "type": "unsigned char",
@@ -809,6 +827,13 @@ expression: "&to_value(sttl).unwrap()"
         {
           "name": "field_layout::vtable::SubSub",
           "symbols": "T_field_layout::vtable::SubSub",
+          "isBaseClass": false,
+          "alignmentAndSize": [
+            {
+              "alignment": "align(8)",
+              "size": "64"
+            }
+          ],
           "items": [
             {
               "Field": {
@@ -819,6 +844,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned char",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::vtable::SubSub>_z\" data-confidences=\"[&quot;concrete&quot;]\">z</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -836,8 +864,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::vtable::Sub1a (base class)",
+          "name": "field_layout::vtable::Sub1a",
           "symbols": "T_field_layout::vtable::Sub1a",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -848,6 +878,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned char",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::vtable::Sub1a>_x\" data-confidences=\"[&quot;concrete&quot;]\">x</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -865,8 +898,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::vtable::Sub1b (base class)",
+          "name": "field_layout::vtable::Sub1b",
           "symbols": "T_field_layout::vtable::Sub1b",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -877,6 +912,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned char",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::vtable::Sub1b>_y\" data-confidences=\"[&quot;concrete&quot;]\">y</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -894,8 +932,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::vtable::Sub2 (base class)",
+          "name": "field_layout::vtable::Sub2",
           "symbols": "T_field_layout::vtable::Sub2",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -906,6 +946,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned char",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::vtable::Sub2>_w\" data-confidences=\"[&quot;concrete&quot;]\">w</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -923,8 +966,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::vtable::Sub3 (base class)",
+          "name": "field_layout::vtable::Sub3",
           "symbols": "T_field_layout::vtable::Sub3",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -936,6 +981,7 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x30",
@@ -954,6 +1000,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::vtable::Sub3>_v\" data-confidences=\"[&quot;concrete&quot;]\">v</span>;"
+                ],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x38",
@@ -965,8 +1014,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::vtable::Base1 (base class)",
+          "name": "field_layout::vtable::Base1",
           "symbols": "T_field_layout::vtable::Base1",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -978,6 +1029,7 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x0",
@@ -989,8 +1041,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::vtable::Base1 (base class)",
+          "name": "field_layout::vtable::Base1",
           "symbols": "T_field_layout::vtable::Base1",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -1002,6 +1056,7 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x10",
@@ -1013,8 +1068,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::vtable::Base2 (base class)",
+          "name": "field_layout::vtable::Base2",
           "symbols": "T_field_layout::vtable::Base2",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -1026,6 +1083,7 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x20",
@@ -1037,11 +1095,14 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::vtable::Base3 (base class)",
+          "name": "field_layout::vtable::Base3",
           "symbols": "T_field_layout::vtable::Base3",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": []
         }
       ]
     }
-  ]
+  ],
+  "className": null
 }

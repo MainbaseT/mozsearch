@@ -1,8 +1,8 @@
 use cssparser;
 
 use crate::file_format::analysis::{
-    AnalysisKind, AnalysisSource, AnalysisTarget, LineRange, Location,
-    SourceRange, SourceTag, TargetTag, WithLocation
+    AnalysisKind, AnalysisSource, AnalysisTarget, LineRange, Location, SourceRange, SourceTag,
+    TargetTag, WithLocation,
 };
 
 // NOTE: This does the same as analysis_manglings::mangle_file without regex
@@ -16,7 +16,7 @@ fn mangle_name(name: &str) -> String {
                 s.push(c as char);
             }
             _ => {
-                s.push_str(format!("@{:02X}", c as u8).as_str());
+                s.push_str(format!("@{:02X}", { c }).as_str());
             }
         }
     }
@@ -24,43 +24,57 @@ fn mangle_name(name: &str) -> String {
     s
 }
 
-fn to_loc(first_line: u32,
-          start: &cssparser::SourceLocation,
-          end: &cssparser::SourceLocation) -> Location {
+fn to_loc(
+    first_line: u32,
+    start: &cssparser::SourceLocation,
+    end: &cssparser::SourceLocation,
+) -> Location {
     // cssparser::SourceLocation uses 0-origin line and 1-origin column.
     // analysis::Location uses 1-origin line and 0-origin column.
     // first_line is 1-origin.
-    return Location {
+    Location {
         lineno: first_line + start.line,
         col_start: start.column - 1,
         col_end: end.column - 1,
     }
 }
 
-fn to_source(loc: Location, syntax: Vec<String>, pretty: String, sym: String) -> WithLocation<AnalysisSource::<String>> {
+fn to_source(
+    loc: Location,
+    syntax: Vec<String>,
+    pretty: String,
+    sym: String,
+) -> WithLocation<AnalysisSource<String>> {
     WithLocation {
         data: AnalysisSource {
             source: SourceTag::Source,
-            syntax: syntax,
-            pretty: pretty,
+            syntax,
+            pretty,
             sym: vec![sym],
             no_crossref: false,
             nesting_range: SourceRange::default(),
             type_pretty: None,
             type_sym: None,
             arg_ranges: vec![],
+            expansion_info: None,
+            confidence: None,
         },
-        loc: loc.clone(),
+        loc,
     }
 }
 
-fn to_target(loc: Location, kind: AnalysisKind, pretty: String, sym: String) -> WithLocation<AnalysisTarget::<String>> {
+fn to_target(
+    loc: Location,
+    kind: AnalysisKind,
+    pretty: String,
+    sym: String,
+) -> WithLocation<AnalysisTarget<String>> {
     WithLocation {
         data: AnalysisTarget {
             target: TargetTag::Target,
-            kind: kind,
-            pretty: pretty,
-            sym: sym,
+            kind,
+            pretty,
+            sym,
             context: "".to_string(),
             contextsym: "".to_string(),
             peek_range: LineRange {
@@ -69,14 +83,18 @@ fn to_target(loc: Location, kind: AnalysisKind, pretty: String, sym: String) -> 
             },
             arg_ranges: vec![],
         },
-        loc: loc,
+        loc,
     }
 }
 
-fn analyze_css_block<F>(input: &mut cssparser::Parser, first_line: u32,
-                        is_curly_children: bool, is_inside_lhs: bool, callback: &mut F)
-where
-    F: FnMut(String)
+fn analyze_css_block<F>(
+    input: &mut cssparser::Parser,
+    first_line: u32,
+    is_curly_children: bool,
+    is_inside_lhs: bool,
+    callback: &mut F,
+) where
+    F: FnMut(String),
 {
     use cssparser::Token::*;
     let mut start = input.current_source_location();
@@ -96,14 +114,23 @@ where
 
                     let (syntax, kind) = if after_at_property {
                         after_at_property = false;
-                        (vec!["decl".to_string(), "cssprop".to_string()], AnalysisKind::Decl)
+                        (
+                            vec!["decl".to_string(), "cssprop".to_string()],
+                            AnalysisKind::Decl,
+                        )
                     } else if is_lhs {
-                        (vec!["def".to_string(), "cssprop".to_string()], AnalysisKind::Def)
+                        (
+                            vec!["def".to_string(), "cssprop".to_string()],
+                            AnalysisKind::Def,
+                        )
                     } else {
-                        (vec!["use".to_string(), "cssprop".to_string()], AnalysisKind::Use)
+                        (
+                            vec!["use".to_string(), "cssprop".to_string()],
+                            AnalysisKind::Use,
+                        )
                     };
 
-                    let source = to_source(loc.clone(), syntax, source_pretty, sym.clone());
+                    let source = to_source(loc, syntax, source_pretty, sym.clone());
                     callback(serde_json::to_string(&source).unwrap());
                     let target = to_target(loc, kind, target_pretty, sym);
                     callback(serde_json::to_string(&target).unwrap());
@@ -133,7 +160,7 @@ where
                     let syntax = vec!["use".to_string(), "file".to_string()];
                     let kind = AnalysisKind::Use;
 
-                    let source = to_source(loc.clone(), syntax, source_pretty, sym.clone());
+                    let source = to_source(loc, syntax, source_pretty, sym.clone());
                     callback(serde_json::to_string(&source).unwrap());
                     let target = to_target(loc, kind, target_pretty, sym);
                     callback(serde_json::to_string(&target).unwrap());
@@ -164,10 +191,9 @@ where
     }
 }
 
-pub fn analyze_css<F>(path: String, first_line: u32,
-                  text: String, callback: &mut F)
+pub fn analyze_css<F>(path: String, first_line: u32, text: String, callback: &mut F)
 where
-    F: FnMut(String)
+    F: FnMut(String),
 {
     let mut input = cssparser::ParserInput::new(text.as_str());
     let mut input = cssparser::Parser::new(&mut input);

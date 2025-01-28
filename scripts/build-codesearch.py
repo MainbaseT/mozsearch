@@ -5,7 +5,7 @@ import os
 import sys
 import json
 
-from lib import run
+from lib import run, run_showing_output
 
 def copy_objdir_files(dest_dir, config):
     for d in open(os.path.join(config['index_path'], 'objdir-dirs')).readlines():
@@ -26,6 +26,9 @@ def copy_objdir_files(dest_dir, config):
         f.write(data)
         f.close()
 
+# Make sure a failure during a prior invocation of this command does not break
+# our operation.  This step is not designed to run concurrently, so this is ok.
+run(['rm', '-rf', '/tmp/dummy'])
 os.mkdir('/tmp/dummy')
 
 config_fname = sys.argv[1]
@@ -78,11 +81,27 @@ livegrep_config['fs_paths'].append({
 })
 
 json.dump(livegrep_config, open('/tmp/livegrep.json', 'w'))
+# for debugging assistance, dump what we wrote to disk to stdout
+run_showing_output(['/usr/bin/jq', '.', '/tmp/livegrep.json'])
 
-run(['codesearch', '/tmp/livegrep.json',
+
+def convert_size_warn_to_info(line):
+    if line.startswith("WARN:") and line.endswith(" is too large to be indexed."):
+        return "INFO" + line[4:]
+
+    return line
+
+
+def output_filter(text):
+    return '\n'.join(map(convert_size_warn_to_info, text.split('\n')))
+
+
+# we also want to see the output of what codesearch is doing
+run_showing_output(
+    ['codesearch', '/tmp/livegrep.json',
      '-dump_index', tree['codesearch_path'],
      '-index_only',
-     '-max_matches', '1000',
+     '-max_matches', '4000',
      # the default is 27 which is a chunk size of 128 MiB which was resulting in
      # only 2 threads having work to do for very big queries, so we're scaling
      # down by 8 (2**3) to be able to saturate 8 threads and give each thread
@@ -95,7 +114,8 @@ run(['codesearch', '/tmp/livegrep.json',
      # better to give each thread potentialy 8 work units where we currently
      # only see 1.)
      '-chunk_power', '24',
-     '-line_limit', '4096'], stdin=open('/dev/null'), cwd='/tmp/dummy')
+     '-line_limit', '4096'], stdin=open('/dev/null'), cwd='/tmp/dummy',
+     output_filter=output_filter)
 
 run(['rm', '-rf', '/tmp/dummy'])
 run(['rm', '-rf', '/tmp/livegrep.json'])

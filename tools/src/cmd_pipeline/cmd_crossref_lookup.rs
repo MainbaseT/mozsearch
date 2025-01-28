@@ -3,7 +3,8 @@ use clap::Args;
 use ustr::{ustr, Ustr};
 
 use super::interface::{
-    PipelineCommand, PipelineValues, SymbolCrossrefInfo, SymbolCrossrefInfoList, SymbolMetaFlags, SymbolQuality, SymbolRelation
+    PipelineCommand, PipelineValues, SymbolCrossrefInfo, SymbolCrossrefInfoList, SymbolMetaFlags,
+    SymbolQuality, SymbolRelation,
 };
 
 use crate::abstract_server::{AbstractServer, ErrorDetails, ErrorLayer, Result, ServerError};
@@ -38,7 +39,7 @@ pub struct CrossrefLookupCommand {
 impl PipelineCommand for CrossrefLookupCommand {
     async fn execute(
         &self,
-        server: &Box<dyn AbstractServer + Send + Sync>,
+        server: &(dyn AbstractServer + Send + Sync),
         input: PipelineValues,
     ) -> Result<PipelineValues> {
         // Because this pipeline stage can receive symbols from unfiltered user

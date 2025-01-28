@@ -6,18 +6,18 @@ expression: "&to_value(jvl).unwrap()"
   "values": [
     {
       "value": {
-        "sym": "S_rs_Loader#needs_hard_reload().",
+        "sym": "S_rs_impl#[Loader]needs_hard_reload().",
         "pretty": "Loader::needs_hard_reload",
         "meta": {
           "structured": 1,
           "pretty": "Loader::needs_hard_reload",
-          "sym": "S_rs_Loader#needs_hard_reload().",
+          "sym": "S_rs_impl#[Loader]needs_hard_reload().",
           "type_pretty": "fn needs_hard_reload(&self, _: &Path) -> bool",
           "kind": "method",
           "subsystem": "Core/Simple",
-          "parentsym": "S_rs_Loader#",
           "implKind": "impl",
           "sizeBytes": null,
+          "alignmentBytes": null,
           "ownVFPtrBytes": null,
           "bindingSlots": [],
           "ontologySlots": [],
@@ -29,7 +29,7 @@ expression: "&to_value(jvl).unwrap()"
           "variants": []
         },
         "jumps": {
-          "def": "simple.rs#45"
+          "def": "simple.rs#51"
         }
       }
     }

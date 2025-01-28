@@ -1,10 +1,8 @@
 use async_trait::async_trait;
-use serde_json::{from_str, Value};
 use clap::Args;
+use serde_json::{from_str, Value};
 
-use super::interface::{
-    JsonRecords, PipelineCommand, PipelineValues,
-};
+use super::interface::{JsonRecords, PipelineCommand, PipelineValues};
 use crate::{
     abstract_server::{AbstractServer, Result, ServerError},
     cmd_pipeline::interface::JsonRecordsByFile,
@@ -32,18 +30,21 @@ pub struct MergeAnalysesCommand {
 
 #[async_trait]
 impl PipelineCommand for MergeAnalysesCommand {
-    ///
-    ///
     async fn execute(
         &self,
-        server: &Box<dyn AbstractServer + Send + Sync>,
+        server: &(dyn AbstractServer + Send + Sync),
         _input: PipelineValues,
     ) -> Result<PipelineValues> {
         let abs_paths: Result<Vec<String>> = self
             .args
             .files
             .iter()
-            .map(|f| server.translate_path(crate::abstract_server::SearchfoxIndexRoot::CompressedAnalysis, f))
+            .map(|f| {
+                server.translate_path(
+                    crate::abstract_server::SearchfoxIndexRoot::CompressedAnalysis,
+                    f,
+                )
+            })
             .collect();
 
         let mut merged_output = Vec::new();
@@ -52,12 +53,12 @@ impl PipelineCommand for MergeAnalysesCommand {
         let values: Result<Vec<Value>> = std::str::from_utf8(merged_output.as_slice())
             .unwrap()
             .lines()
-            .map(|s| from_str(s).map_err(|e| ServerError::from(e)))
+            .map(|s| from_str(s).map_err(ServerError::from))
             .collect();
 
         Ok(PipelineValues::JsonRecords(JsonRecords {
             by_file: vec![JsonRecordsByFile {
-                file: self.args.files.iter().next().unwrap().clone(),
+                file: self.args.files.first().unwrap().clone(),
                 records: values?,
             }],
         }))

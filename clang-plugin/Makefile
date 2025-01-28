@@ -8,7 +8,31 @@ LDFLAGS := -fPIC -g -Wl,-R -Wl,'$$ORIGIN' $(LLVM_LDFLAGS) -shared
 
 build: libclang-index-plugin.so
 
+build_with_version_check: clang-version-guard build
+
+clang-version-guard:
+	@$(CXX) --version > clang-version.cache.tmp
+	@if [ -f clang-version.cache ]; then \
+		if ! diff -q clang-version.cache clang-version.cache.tmp; then \
+			echo "Clang version mismatch is detected."; \
+			echo "Rebuilding from scratch..."; \
+			mv clang-version.cache.tmp clang-version.cache; \
+			make clean; \
+		else \
+			rm clang-version.cache.tmp; \
+		fi; \
+	else \
+		echo "Previous clang version is not found."; \
+		echo "Rebuilding from scratch..."; \
+		mv clang-version.cache.tmp clang-version.cache; \
+		make clean; \
+	fi
+
 %.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $^ -o $@
+
+from-clangd/%.o: from-clangd/%.cpp
+	mkdir -p from-clangd
 	$(CXX) $(CXXFLAGS) -c $^ -o $@
 
 libclang-index-plugin.so: FileOperations.o StringOperations.o BindingOperations.o MozsearchIndexer.o from-clangd/HeuristicResolver.o
@@ -44,4 +68,4 @@ analyze: build
 	@echo "maybe type:"
 	@echo "vim ${ANALYSIS_DIR}/test.cpp"
 
-.PHONY: build clean
+.PHONY: build clean clang-version-guard

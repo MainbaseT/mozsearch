@@ -14,7 +14,7 @@ check-in-vagrant:
 	@[ -d /vagrant ] || (echo "This command must be run inside the vagrant instance" > /dev/stderr; exit 1)
 
 build-clang-plugin: check-in-vagrant
-	$(MAKE) -C clang-plugin
+	$(MAKE) -C clang-plugin build_with_version_check
 
 # This can be built outside the vagrant instance too
 # We specify "--all-targets" in order to minimize rebuilding required when we invoke
@@ -63,7 +63,7 @@ review-test-repo:
 	/vagrant/infrastructure/web-server-setup.sh /vagrant/tests config.json ~/index ~
 	/vagrant/infrastructure/web-server-run.sh /vagrant/tests ~/index ~ WAIT
 	INSTA_FORCE_PASS=1 /vagrant/infrastructure/web-server-check.sh /vagrant/tests ~/index "http://localhost/"
-	cargo insta review --workspace-root=/vagrant/tests/
+	cargo insta review --workspace-root=/vagrant/tests/tests/checks
 
 build-searchfox-repo: check-in-vagrant build-clang-plugin build-rust-tools
 	mkdir -p ~/searchfox-index
@@ -90,6 +90,30 @@ build-mozilla-repo: check-in-vagrant build-clang-plugin build-rust-tools
 serve-mozilla-repo: check-in-vagrant build-clang-plugin build-rust-tools
 	/vagrant/infrastructure/web-server-setup.sh ~/mozilla-config just-mc.json ~/mozilla-index ~
 	/vagrant/infrastructure/web-server-run.sh ~/mozilla-config ~/mozilla-index ~
+
+# This builds both mozsearch and mozsearch-mozilla using the trees as they exist
+# on github rather than your local copies.  This differs from the
+# "build-searchfox-repo" make target which uses your current tree, which can be
+# useful but where anything that isn't checked-in can cause failures.  (That is,
+# if you run `git status` and anything is modified, output-files can crash when
+# the local checked-out status does not have the same number of lines as the
+# blame repo says there should be.)
+#
+# Notes:
+# - If you want to use a modified version of mozsearch-mozilla, such as one
+#   checked out under "config" in the check-out repo, you can create a symlink
+#   in the VM's home directory via `pushd ~; ln -s /vagrant/config mozsearch-config`.
+build-mozsearch-repo: check-in-vagrant build-clang-plugin build-rust-tools
+	[ -e ~/mozsearch-config ] || git clone https://github.com/mozsearch/mozsearch-mozilla ~/mozsearch-config
+	mkdir -p ~/mozsearch-index
+	/vagrant/infrastructure/indexer-setup.sh ~/mozsearch-config just-mozsearch.json ~/mozsearch-index
+	/vagrant/infrastructure/indexer-run.sh ~/mozsearch-config ~/mozsearch-index
+	/vagrant/infrastructure/web-server-setup.sh ~/mozsearch-config just-mozsearch.json ~/mozsearch-index ~
+	/vagrant/infrastructure/web-server-run.sh ~/mozsearch-config ~/mozsearch-index ~
+
+serve-mozsearch-repo: check-in-vagrant build-clang-plugin build-rust-tools
+	/vagrant/infrastructure/web-server-setup.sh ~/mozsearch-config just-mozsearch.json ~/mozsearch-index ~
+	/vagrant/infrastructure/web-server-run.sh ~/mozsearch-config ~/mozsearch-index ~
 
 # Notes:
 # - If you want to use a modified version of mozsearch-mozilla, such as one
@@ -175,3 +199,13 @@ comparison: check-in-vagrant build-clang-plugin build-rust-tools
 	diff -u -r -x objdir ~/baseline/tests ~/modified/tests || true
 	@echo "------------------- Above is the diff between baseline and modified. ---------------------"
 	@echo "--- Run 'diff -u -r -x objdir ~/{baseline,modified}/tests | less' to see it in a pager ---"
+
+build-webtest-repo: check-in-vagrant build-clang-plugin build-rust-tools
+	mkdir -p ~/index
+	/vagrant/infrastructure/indexer-setup.sh /vagrant/tests webtest-config.json ~/index
+	/vagrant/infrastructure/indexer-run.sh /vagrant/tests ~/index
+	/vagrant/infrastructure/web-server-setup.sh /vagrant/tests webtest-config.json ~/index ~
+	/vagrant/infrastructure/web-server-run.sh /vagrant/tests ~/index ~ WAIT
+
+webtest: build-webtest-repo
+	./scripts/webtest.sh

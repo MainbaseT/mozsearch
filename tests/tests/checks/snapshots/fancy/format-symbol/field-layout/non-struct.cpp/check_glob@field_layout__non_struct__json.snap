@@ -19,6 +19,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::non_struct::Proxy",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -30,7 +31,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "field-layout/non-struct.cpp#11"
+            "def": "field-layout/non-struct.cpp#10"
           }
         },
         "T_field_layout::non_struct::Proxy": {
@@ -45,6 +46,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 1,
+            "alignmentBytes": 1,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -52,6 +54,7 @@ expression: "&to_value(sttl).unwrap()"
             "methods": [],
             "fields": [
               {
+                "lineRange": "#10",
                 "pretty": "field_layout::non_struct::Proxy::x",
                 "sym": "F_<T_field_layout::non_struct::Proxy>_x",
                 "type": "signed char",
@@ -66,7 +69,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "field-layout/non-struct.cpp#10"
+            "def": "field-layout/non-struct.cpp#9"
           }
         }
       },
@@ -77,6 +80,13 @@ expression: "&to_value(sttl).unwrap()"
         {
           "name": "field_layout::non_struct::Proxy",
           "symbols": "T_field_layout::non_struct::Proxy",
+          "isBaseClass": false,
+          "alignmentAndSize": [
+            {
+              "alignment": "align(1)",
+              "size": "1"
+            }
+          ],
           "items": [
             {
               "Field": {
@@ -87,6 +97,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "signed char",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_int8_t\" data-confidences=\"[&quot;concrete&quot;]\">int8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::non_struct::Proxy>_x\" data-confidences=\"[&quot;concrete&quot;]\">x</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -114,6 +127,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -135,5 +149,6 @@ expression: "&to_value(sttl).unwrap()"
       ],
       "rows": []
     }
-  ]
+  ],
+  "className": null
 }

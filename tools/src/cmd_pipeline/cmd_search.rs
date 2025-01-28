@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use clap::Args;
 use json_structural_diff::JsonDiff;
 use serde_json::{json, Map, Value};
-use clap::Args;
 
 use super::interface::{JsonValue, PipelineCommand, PipelineValues};
 use crate::abstract_server::{AbstractServer, Result};
@@ -91,21 +91,21 @@ fn dictify(val: &mut Value) -> Option<Value> {
         _ => {}
     };
 
-    return None;
+    None
 }
 
 fn dictify_root(mut val: Value) -> Value {
     if let Some(replacement) = dictify(&mut val) {
         return replacement;
     }
-    return val;
+    val
 }
 
 #[async_trait]
 impl PipelineCommand for SearchCommand {
     async fn execute(
         &self,
-        server: &Box<dyn AbstractServer + Send + Sync>,
+        server: &(dyn AbstractServer + Send + Sync),
         input: PipelineValues,
     ) -> Result<PipelineValues> {
         let mut value = server.perform_query(&self.args.query).await?;

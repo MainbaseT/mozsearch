@@ -12,6 +12,8 @@ clang-plugin/testfiles
 clang-plugin/analysis
 clang-plugin/.cache
 clang-plugin/compile_commands.json
+clang-plugin/clang-version.cache
+clang-plugin/clang-version.cache.tmp
 /js
 tools/target
 /scripts/web-analyze/wasm-css-analyzer/target
@@ -29,3 +31,8 @@ addons
 /tree-configs/*
 !/tree-configs/README.md
 .direnv
+mozsearch-firefox*
+/tests/tests/checks/target
+/tests/tests/files/target
+/tests/tests/files/test_rust_dependency/Cargo.lock
+/tests/tests/files/test_rust_dependency/target

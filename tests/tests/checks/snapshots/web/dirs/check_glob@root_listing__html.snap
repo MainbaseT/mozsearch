@@ -57,8 +57,19 @@ expression: "&fb.contents"
   <div id="content" class="content" data-no-results="No results for current query.">
     
   <div class="breadcrumbs">
-    <a href="/tests/source/">tests</a>
+    <a href="/tests/source/">tests</a><button id="tree-switcher" title="Open tree switcher menu" aria-expanded="false" aria-haspopup="true" aria-controls="tree-switcher-menu"></button><div id="tree-switcher-menu" title="Tree switcher" role="menu" class="context-menu" style="display: none"></div>
   </div>
+
+    <div class="panel" id="panel">
+  <button id="panel-toggle">
+    <span class="navpanel-icon icon-down-dir" aria-hidden="false"></span>
+    Navigation
+    <a id="show-settings" title="Go to settings page" href="/tests/pages/settings.html"><span class="navpanel-icon icon-cog expanded" aria-hidden="false"></span></a>
+  </button>
+  <section id="panel-content" aria-expanded="false" aria-hidden="true" style="display: none;">
+    <label class="panel-accel"><input type="checkbox" id="panel-accel-enable" checked="checked">Enable keyboard shortcuts</label>
+  </section>
+</div>
 <table class="folder-content">
     <thead>
       <tr>
@@ -69,6 +80,12 @@ expression: "&fb.contents"
     </thead>
     <tbody>
         <tr>
+          <td><a href="/tests/source/.clang-format" class="mimetype-fixed-container mimetype-icon-clang-format">.clang-format</a></td>
+          <td class="description"><a href="/tests/source/.clang-format" title=""></td>
+          <td><a href="/tests/source/.clang-format">1169</a></td>
+        </tr>
+
+        <tr>
           <td><a href="/tests/source/.eslintignore" class="mimetype-fixed-container mimetype-icon-eslintignore">.eslintignore</a></td>
           <td class="description"><a href="/tests/source/.eslintignore" title=""></td>
           <td><a href="/tests/source/.eslintignore">236</a></td>
@@ -77,7 +94,7 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/.gitattributes" class="mimetype-fixed-container mimetype-icon-gitattributes">.gitattributes</a></td>
           <td class="description"><a href="/tests/source/.gitattributes" title=""></td>
-          <td><a href="/tests/source/.gitattributes">214</a></td>
+          <td><a href="/tests/source/.gitattributes">213</a></td>
         </tr>
 
         <tr>
@@ -105,7 +122,7 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/atom_list.h" class="mimetype-fixed-container mimetype-icon-h">atom_list.h</a></td>
           <td class="description"><a href="/tests/source/atom_list.h" title=""></td>
-          <td><a href="/tests/source/atom_list.h">146</a></td>
+          <td><a href="/tests/source/atom_list.h">218</a></td>
         </tr>
 
         <tr>
@@ -117,7 +134,7 @@ expression: "&fb.contents"
    `atom_list.h` while also providing an example of a header file that&#39;s
    included multiple times.  (We didn&#39;t really have coverage for this before,
    and this is important for our merging logic.) </td>
-          <td><a href="/tests/source/atom_magic.h">619</a></td>
+          <td><a href="/tests/source/atom_magic.h">615</a></td>
         </tr>
 
         <tr>
@@ -149,13 +166,13 @@ expression: "&fb.contents"
    that cats and dogs work.
  - Not using templates.
  </td>
-          <td><a href="/tests/source/big_cpp.cpp">10247</a></td>
+          <td><a href="/tests/source/big_cpp.cpp">10261</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/big_header.h" class="mimetype-fixed-container mimetype-icon-h">big_header.h</a></td>
           <td class="description"><a href="/tests/source/big_header.h" title=""></td>
-          <td><a href="/tests/source/big_header.h">9508</a></td>
+          <td><a href="/tests/source/big_header.h">9519</a></td>
         </tr>
 
         <tr>
@@ -166,28 +183,30 @@ expression: "&fb.contents"
 
         <tr>
           <td><a href="/tests/source/bug1432300.cpp" class="mimetype-fixed-container mimetype-icon-cpp">bug1432300.cpp</a></td>
-          <td class="description"><a href="/tests/source/bug1432300.cpp" title="This simulates the code from JS::ProfilingFrameIterator::getPhysicalFrameAndEntry
- which was highlighting incorrectly in bug 1432300 ">This simulates the code from JS::ProfilingFrameIterator::getPhysicalFrameAndEntry
- which was highlighting incorrectly in bug 1432300 </td>
-          <td><a href="/tests/source/bug1432300.cpp">428</a></td>
+          <td class="description"><a href="/tests/source/bug1432300.cpp" title="This simulates the code from
+ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry which was highlighting
+ incorrectly in bug 1432300 ">This simulates the code from
+ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry which was highlighting
+ incorrectly in bug 1432300 </td>
+          <td><a href="/tests/source/bug1432300.cpp">444</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/bug1435345.cpp" class="mimetype-fixed-container mimetype-icon-cpp">bug1435345.cpp</a></td>
           <td class="description"><a href="/tests/source/bug1435345.cpp" title="Searchfox should analyze uses of operator== ">Searchfox should analyze uses of operator== </td>
-          <td><a href="/tests/source/bug1435345.cpp">271</a></td>
+          <td><a href="/tests/source/bug1435345.cpp">247</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/bug1446220_unicode.html" class="mimetype-fixed-container mimetype-icon-html">bug1446220_unicode.html</a></td>
           <td class="description"><a href="/tests/source/bug1446220_unicode.html" title="Font family name parsing tests">Font family name parsing tests</td>
-          <td><a href="/tests/source/bug1446220_unicode.html">10485</a></td>
+          <td><a href="/tests/source/bug1446220_unicode.html">10479</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/bug1449291.cpp" class="mimetype-fixed-container mimetype-icon-cpp">bug1449291.cpp</a></td>
           <td class="description"><a href="/tests/source/bug1449291.cpp" title=""></td>
-          <td><a href="/tests/source/bug1449291.cpp">729</a></td>
+          <td><a href="/tests/source/bug1449291.cpp">578</a></td>
         </tr>
 
         <tr>
@@ -205,31 +224,31 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/bug1781178.cpp" class="mimetype-fixed-container mimetype-icon-cpp">bug1781178.cpp</a></td>
           <td class="description"><a href="/tests/source/bug1781178.cpp" title=""></td>
-          <td><a href="/tests/source/bug1781178.cpp">951</a></td>
+          <td><a href="/tests/source/bug1781178.cpp">1301</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/build.gradle.kts" class="mimetype-fixed-container mimetype-icon-kts">build.gradle.kts</a></td>
           <td class="description"><a href="/tests/source/build.gradle.kts" title=""></td>
-          <td><a href="/tests/source/build.gradle.kts">2368</a></td>
+          <td><a href="/tests/source/build.gradle.kts">2370</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/build.rs" class="mimetype-fixed-container mimetype-icon-rs">build.rs</a></td>
           <td class="description"><a href="/tests/source/build.rs" title=""></td>
-          <td><a href="/tests/source/build.rs">337</a></td>
+          <td><a href="/tests/source/build.rs">358</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/Cargo.lock" class="mimetype-fixed-container mimetype-icon-lock">Cargo.lock</a></td>
           <td class="description"><a href="/tests/source/Cargo.lock" title=""></td>
-          <td><a href="/tests/source/Cargo.lock">248</a></td>
+          <td><a href="/tests/source/Cargo.lock">254</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/Cargo.toml" class="mimetype-fixed-container mimetype-icon-toml">Cargo.toml</a></td>
           <td class="description"><a href="/tests/source/Cargo.toml" title=""></td>
-          <td><a href="/tests/source/Cargo.toml">250</a></td>
+          <td><a href="/tests/source/Cargo.toml">267</a></td>
         </tr>
 
         <tr>
@@ -245,6 +264,12 @@ expression: "&fb.contents"
         </tr>
 
         <tr>
+          <td><a href="/tests/source/cpp" class="mimetype-fixed-container mimetype-icon-folder">cpp</a></td>
+          <td class="description"><a href="/tests/source/cpp" title=""></td>
+          <td><a href="/tests/source/cpp"></a></td>
+        </tr>
+
+        <tr>
           <td><a href="/tests/source/critters-postcard.jpg" class="mimetype-fixed-container mimetype-icon-jpg">critters-postcard.jpg</a></td>
           <td class="description"><a href="/tests/source/critters-postcard.jpg" title=""></td>
           <td><a href="/tests/source/critters-postcard.jpg">108154</a></td>
@@ -257,9 +282,15 @@ expression: "&fb.contents"
         </tr>
 
         <tr>
+          <td><a href="/tests/source/docs" class="mimetype-fixed-container mimetype-icon-folder">docs</a></td>
+          <td class="description"><a href="/tests/source/docs" title=""></td>
+          <td><a href="/tests/source/docs"></a></td>
+        </tr>
+
+        <tr>
           <td><a href="/tests/source/enummacro.cpp" class="mimetype-fixed-container mimetype-icon-cpp">enummacro.cpp</a></td>
           <td class="description"><a href="/tests/source/enummacro.cpp" title=""></td>
-          <td><a href="/tests/source/enummacro.cpp">359</a></td>
+          <td><a href="/tests/source/enummacro.cpp">353</a></td>
         </tr>
 
         <tr>
@@ -272,6 +303,12 @@ expression: "&fb.contents"
           <td><a href="/tests/source/field-layout" class="mimetype-fixed-container mimetype-icon-folder">field-layout</a></td>
           <td class="description"><a href="/tests/source/field-layout" title=""></td>
           <td><a href="/tests/source/field-layout"></a></td>
+        </tr>
+
+        <tr>
+          <td><a href="/tests/source/ForwardingTemplates.cpp" class="mimetype-fixed-container mimetype-icon-cpp">ForwardingTemplates.cpp</a></td>
+          <td class="description"><a href="/tests/source/ForwardingTemplates.cpp" title=""></td>
+          <td><a href="/tests/source/ForwardingTemplates.cpp">3089</a></td>
         </tr>
 
         <tr>
@@ -289,13 +326,13 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/gradlew" class="mimetype-fixed-container mimetype-icon-">gradlew</a></td>
           <td class="description"><a href="/tests/source/gradlew" title=""></td>
-          <td><a href="/tests/source/gradlew">8692</a></td>
+          <td><a href="/tests/source/gradlew">8762</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/gradlew.bat" class="mimetype-fixed-container mimetype-icon-bat">gradlew.bat</a></td>
           <td class="description"><a href="/tests/source/gradlew.bat" title=""></td>
-          <td><a href="/tests/source/gradlew.bat">2868</a></td>
+          <td><a href="/tests/source/gradlew.bat">2966</a></td>
         </tr>
 
         <tr>
@@ -331,7 +368,7 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/implicit.cpp" class="mimetype-fixed-container mimetype-icon-cpp">implicit.cpp</a></td>
           <td class="description"><a href="/tests/source/implicit.cpp" title=""></td>
-          <td><a href="/tests/source/implicit.cpp">208</a></td>
+          <td><a href="/tests/source/implicit.cpp">193</a></td>
         </tr>
 
         <tr>
@@ -355,13 +392,19 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/jni.cpp" class="mimetype-fixed-container mimetype-icon-cpp">jni.cpp</a></td>
           <td class="description"><a href="/tests/source/jni.cpp" title=""></td>
-          <td><a href="/tests/source/jni.cpp">1699</a></td>
+          <td><a href="/tests/source/jni.cpp">1742</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/js" class="mimetype-fixed-container mimetype-icon-folder">js</a></td>
           <td class="description"><a href="/tests/source/js" title=""></td>
           <td><a href="/tests/source/js"></a></td>
+        </tr>
+
+        <tr>
+          <td><a href="/tests/source/lambdas.cpp" class="mimetype-fixed-container mimetype-icon-cpp">lambdas.cpp</a></td>
+          <td class="description"><a href="/tests/source/lambdas.cpp" title=""></td>
+          <td><a href="/tests/source/lambdas.cpp">608</a></td>
         </tr>
 
         <tr>
@@ -373,13 +416,13 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/lots_of_calls.cpp" class="mimetype-fixed-container mimetype-icon-cpp">lots_of_calls.cpp</a></td>
           <td class="description"><a href="/tests/source/lots_of_calls.cpp" title=""></td>
-          <td><a href="/tests/source/lots_of_calls.cpp">1659</a></td>
+          <td><a href="/tests/source/lots_of_calls.cpp">1663</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/macro.cpp" class="mimetype-fixed-container mimetype-icon-cpp">macro.cpp</a></td>
           <td class="description"><a href="/tests/source/macro.cpp" title=""></td>
-          <td><a href="/tests/source/macro.cpp">66</a></td>
+          <td><a href="/tests/source/macro.cpp">1757</a></td>
         </tr>
 
         <tr>
@@ -403,7 +446,7 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/mochitest.ini" class="mimetype-fixed-container mimetype-icon-ini">mochitest.ini</a></td>
           <td class="description"><a href="/tests/source/mochitest.ini" title=""></td>
-          <td><a href="/tests/source/mochitest.ini">142</a></td>
+          <td><a href="/tests/source/mochitest.ini">140</a></td>
         </tr>
 
         <tr>
@@ -417,19 +460,19 @@ expression: "&fb.contents"
           <td class="description"><a href="/tests/source/multiline.cpp" title="Some documentation.
  ">Some documentation.
  </td>
-          <td><a href="/tests/source/multiline.cpp">331</a></td>
+          <td><a href="/tests/source/multiline.cpp">319</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/nsISupports.h" class="mimetype-fixed-container mimetype-icon-h">nsISupports.h</a></td>
           <td class="description"><a href="/tests/source/nsISupports.h" title=""></td>
-          <td><a href="/tests/source/nsISupports.h">729</a></td>
+          <td><a href="/tests/source/nsISupports.h">730</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/nsTArray.h" class="mimetype-fixed-container mimetype-icon-h">nsTArray.h</a></td>
           <td class="description"><a href="/tests/source/nsTArray.h" title=""></td>
-          <td><a href="/tests/source/nsTArray.h">672</a></td>
+          <td><a href="/tests/source/nsTArray.h">673</a></td>
         </tr>
 
         <tr>
@@ -439,7 +482,13 @@ expression: "&fb.contents"
 ">This file is intended to create interesting test cases for searches against
  a base class with a limited number of overrides.
 </td>
-          <td><a href="/tests/source/overs.cpp">1535</a></td>
+          <td><a href="/tests/source/overs.cpp">1521</a></td>
+        </tr>
+
+        <tr>
+          <td><a href="/tests/source/python" class="mimetype-fixed-container mimetype-icon-folder">python</a></td>
+          <td class="description"><a href="/tests/source/python" title=""></td>
+          <td><a href="/tests/source/python"></a></td>
         </tr>
 
         <tr>
@@ -457,7 +506,13 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/runnables.cpp" class="mimetype-fixed-container mimetype-icon-cpp">runnables.cpp</a></td>
           <td class="description"><a href="/tests/source/runnables.cpp" title=""></td>
-          <td><a href="/tests/source/runnables.cpp">1234</a></td>
+          <td><a href="/tests/source/runnables.cpp">1146</a></td>
+        </tr>
+
+        <tr>
+          <td><a href="/tests/source/rust" class="mimetype-fixed-container mimetype-icon-folder">rust</a></td>
+          <td class="description"><a href="/tests/source/rust" title=""></td>
+          <td><a href="/tests/source/rust"></a></td>
         </tr>
 
         <tr>
@@ -469,7 +524,7 @@ expression: "&fb.contents"
         <tr>
           <td><a href="/tests/source/simple.cpp" class="mimetype-fixed-container mimetype-icon-cpp">simple.cpp</a></td>
           <td class="description"><a href="/tests/source/simple.cpp" title=""></td>
-          <td><a href="/tests/source/simple.cpp">1941</a></td>
+          <td><a href="/tests/source/simple.cpp">1839</a></td>
         </tr>
 
         <tr>
@@ -479,7 +534,7 @@ expression: "&fb.contents"
 ">A grab-bug of rust code to exercise the searchfox indexer.
    Note how this comment ends up in the file description, too!
 </td>
-          <td><a href="/tests/source/simple.rs">1729</a></td>
+          <td><a href="/tests/source/simple.rs">1969</a></td>
         </tr>
 
         <tr>
@@ -547,6 +602,12 @@ Spread over multiple lines.
         </tr>
 
         <tr>
+          <td><a href="/tests/source/staticprefs" class="mimetype-fixed-container mimetype-icon-folder">staticprefs</a></td>
+          <td class="description"><a href="/tests/source/staticprefs" title=""></td>
+          <td><a href="/tests/source/staticprefs"></a></td>
+        </tr>
+
+        <tr>
           <td><a href="/tests/source/subdir" class="mimetype-fixed-container mimetype-icon-folder">subdir</a></td>
           <td class="description"><a href="/tests/source/subdir" title=""></td>
           <td><a href="/tests/source/subdir"></a></td>
@@ -559,6 +620,12 @@ Spread over multiple lines.
         </tr>
 
         <tr>
+          <td><a href="/tests/source/template_specialization.cpp" class="mimetype-fixed-container mimetype-icon-cpp">template_specialization.cpp</a></td>
+          <td class="description"><a href="/tests/source/template_specialization.cpp" title=""></td>
+          <td><a href="/tests/source/template_specialization.cpp">288</a></td>
+        </tr>
+
+        <tr>
           <td><a href="/tests/source/templates_nsTArray.cpp" class="mimetype-fixed-container mimetype-icon-cpp">templates_nsTArray.cpp</a></td>
           <td class="description"><a href="/tests/source/templates_nsTArray.cpp" title=""></td>
           <td><a href="/tests/source/templates_nsTArray.cpp">123</a></td>
@@ -567,19 +634,19 @@ Spread over multiple lines.
         <tr>
           <td><a href="/tests/source/templates1.cpp" class="mimetype-fixed-container mimetype-icon-cpp">templates1.cpp</a></td>
           <td class="description"><a href="/tests/source/templates1.cpp" title=""></td>
-          <td><a href="/tests/source/templates1.cpp">267</a></td>
+          <td><a href="/tests/source/templates1.cpp">247</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/templates2.cpp" class="mimetype-fixed-container mimetype-icon-cpp">templates2.cpp</a></td>
           <td class="description"><a href="/tests/source/templates2.cpp" title=""></td>
-          <td><a href="/tests/source/templates2.cpp">452</a></td>
+          <td><a href="/tests/source/templates2.cpp">408</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/templates3.cpp" class="mimetype-fixed-container mimetype-icon-cpp">templates3.cpp</a></td>
           <td class="description"><a href="/tests/source/templates3.cpp" title=""></td>
-          <td><a href="/tests/source/templates3.cpp">439</a></td>
+          <td><a href="/tests/source/templates3.cpp">414</a></td>
         </tr>
 
         <tr>
@@ -591,19 +658,37 @@ Spread over multiple lines.
         <tr>
           <td><a href="/tests/source/templates5.cpp" class="mimetype-fixed-container mimetype-icon-cpp">templates5.cpp</a></td>
           <td class="description"><a href="/tests/source/templates5.cpp" title=""></td>
-          <td><a href="/tests/source/templates5.cpp">179</a></td>
+          <td><a href="/tests/source/templates5.cpp">170</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/templates5.h" class="mimetype-fixed-container mimetype-icon-h">templates5.h</a></td>
           <td class="description"><a href="/tests/source/templates5.h" title=""></td>
-          <td><a href="/tests/source/templates5.h">207</a></td>
+          <td><a href="/tests/source/templates5.h">212</a></td>
+        </tr>
+
+        <tr>
+          <td><a href="/tests/source/templates6.cpp" class="mimetype-fixed-container mimetype-icon-cpp">templates6.cpp</a></td>
+          <td class="description"><a href="/tests/source/templates6.cpp" title=""></td>
+          <td><a href="/tests/source/templates6.cpp">144</a></td>
+        </tr>
+
+        <tr>
+          <td><a href="/tests/source/templates6.h" class="mimetype-fixed-container mimetype-icon-h">templates6.h</a></td>
+          <td class="description"><a href="/tests/source/templates6.h" title=""></td>
+          <td><a href="/tests/source/templates6.h">67</a></td>
+        </tr>
+
+        <tr>
+          <td><a href="/tests/source/templates7.cpp" class="mimetype-fixed-container mimetype-icon-cpp">templates7.cpp</a></td>
+          <td class="description"><a href="/tests/source/templates7.cpp" title=""></td>
+          <td><a href="/tests/source/templates7.cpp">709</a></td>
         </tr>
 
         <tr>
           <td><a href="/tests/source/test_custom_element_base.xul" class="mimetype-fixed-container mimetype-icon-xul">test_custom_element_base.xul</a></td>
           <td class="description"><a href="/tests/source/test_custom_element_base.xul" title=""></td>
-          <td><a href="/tests/source/test_custom_element_base.xul">14637</a></td>
+          <td><a href="/tests/source/test_custom_element_base.xul">14636</a></td>
         </tr>
 
         <tr>
@@ -627,7 +712,7 @@ Spread over multiple lines.
         <tr>
           <td><a href="/tests/source/test_talosconfig_browser_config.json" class="mimetype-fixed-container mimetype-icon-json">test_talosconfig_browser_config.json</a></td>
           <td class="description"><a href="/tests/source/test_talosconfig_browser_config.json" title=""></td>
-          <td><a href="/tests/source/test_talosconfig_browser_config.json">3355</a></td>
+          <td><a href="/tests/source/test_talosconfig_browser_config.json">3356</a></td>
         </tr>
 
         <tr>
@@ -651,7 +736,7 @@ Spread over multiple lines.
         <tr>
           <td><a href="/tests/source/tricky_symbol_names.cpp" class="mimetype-fixed-container mimetype-icon-cpp">tricky_symbol_names.cpp</a></td>
           <td class="description"><a href="/tests/source/tricky_symbol_names.cpp" title=""></td>
-          <td><a href="/tests/source/tricky_symbol_names.cpp">319</a></td>
+          <td><a href="/tests/source/tricky_symbol_names.cpp">313</a></td>
         </tr>
 
         <tr>
@@ -663,7 +748,19 @@ Spread over multiple lines.
         <tr>
           <td><a href="/tests/source/using.cpp" class="mimetype-fixed-container mimetype-icon-cpp">using.cpp</a></td>
           <td class="description"><a href="/tests/source/using.cpp" title=""></td>
-          <td><a href="/tests/source/using.cpp">245</a></td>
+          <td><a href="/tests/source/using.cpp">233</a></td>
+        </tr>
+
+        <tr>
+          <td><a href="/tests/source/webidl" class="mimetype-fixed-container mimetype-icon-folder">webidl</a></td>
+          <td class="description"><a href="/tests/source/webidl" title=""></td>
+          <td><a href="/tests/source/webidl"></a></td>
+        </tr>
+
+        <tr>
+          <td><a href="/tests/source/webtest" class="mimetype-fixed-container mimetype-icon-folder">webtest</a></td>
+          <td class="description"><a href="/tests/source/webtest" title=""></td>
+          <td><a href="/tests/source/webtest"></a></td>
         </tr>
 
         <tr>
@@ -683,6 +780,7 @@ Spread over multiple lines.
 
   </div>
   
+<script src="/tree-list.js"></script>
 <script src="/tests/static/js/settings.js"></script>
 <script src="/tests/static/js/search.js"></script>
 <script src="/tests/static/js/context-menu.js"></script>

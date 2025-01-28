@@ -19,6 +19,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::holes::Base",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -46,6 +47,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::holes::Base",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -73,6 +75,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::holes::Base",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -100,6 +103,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::holes::Base",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -127,6 +131,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::holes::Sub",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -154,6 +159,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::holes::Sub",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -180,6 +186,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 12,
+            "alignmentBytes": 4,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -226,6 +233,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#8",
                 "pretty": "field_layout::holes::Base::a",
                 "sym": "F_<T_field_layout::holes::Base>_a",
                 "type": "unsigned char",
@@ -235,6 +243,7 @@ expression: "&to_value(sttl).unwrap()"
                 "sizeBytes": 1
               },
               {
+                "lineRange": "#9",
                 "pretty": "field_layout::holes::Base::b",
                 "sym": "F_<T_field_layout::holes::Base>_b",
                 "type": "unsigned short",
@@ -244,6 +253,7 @@ expression: "&to_value(sttl).unwrap()"
                 "sizeBytes": 2
               },
               {
+                "lineRange": "#10",
                 "pretty": "field_layout::holes::Base::c",
                 "sym": "F_<T_field_layout::holes::Base>_c",
                 "type": "unsigned int",
@@ -253,6 +263,7 @@ expression: "&to_value(sttl).unwrap()"
                 "sizeBytes": 4
               },
               {
+                "lineRange": "#11",
                 "pretty": "field_layout::holes::Base::d",
                 "sym": "F_<T_field_layout::holes::Base>_d",
                 "type": "char",
@@ -285,6 +296,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 20,
+            "alignmentBytes": 4,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -328,6 +340,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#15",
                 "pretty": "field_layout::holes::Sub::x",
                 "sym": "F_<T_field_layout::holes::Sub>_x",
                 "type": "unsigned char",
@@ -337,6 +350,7 @@ expression: "&to_value(sttl).unwrap()"
                 "sizeBytes": 1
               },
               {
+                "lineRange": "#16",
                 "pretty": "field_layout::holes::Sub::y",
                 "sym": "F_<T_field_layout::holes::Sub>_y",
                 "type": "unsigned int",
@@ -362,6 +376,13 @@ expression: "&to_value(sttl).unwrap()"
         {
           "name": "field_layout::holes::Sub",
           "symbols": "T_field_layout::holes::Sub",
+          "isBaseClass": false,
+          "alignmentAndSize": [
+            {
+              "alignment": "align(4)",
+              "size": "20"
+            }
+          ],
           "items": [
             {
               "Field": {
@@ -372,6 +393,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned char",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::holes::Sub>_x\" data-confidences=\"[&quot;concrete&quot;]\">x</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -396,6 +420,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint32_t\" data-confidences=\"[&quot;concrete&quot;]\">uint32_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::holes::Sub>_y\" data-confidences=\"[&quot;concrete&quot;]\">y</span>;"
+                ],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x10",
@@ -407,8 +434,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::holes::Base (base class)",
+          "name": "field_layout::holes::Base",
           "symbols": "T_field_layout::holes::Base",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -419,6 +448,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned char",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::holes::Base>_a\" data-confidences=\"[&quot;concrete&quot;]\">a</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -443,6 +475,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint16_t\" data-confidences=\"[&quot;concrete&quot;]\">uint16_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::holes::Base>_b\" data-confidences=\"[&quot;concrete&quot;]\">b</span>;"
+                ],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x2",
@@ -460,6 +495,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned int",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint32_t\" data-confidences=\"[&quot;concrete&quot;]\">uint32_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::holes::Base>_c\" data-confidences=\"[&quot;concrete&quot;]\">c</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -479,6 +517,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [
+                  "  <span class=\"syn_reserved\" >char</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::holes::Base>_d\" data-confidences=\"[&quot;concrete&quot;]\">d</span>;"
+                ],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x8",
@@ -496,5 +537,6 @@ expression: "&to_value(sttl).unwrap()"
         }
       ]
     }
-  ]
+  ],
+  "className": null
 }

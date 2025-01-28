@@ -20,7 +20,7 @@ CONFIG_REPO_URL=$4
 CONFIG_REPO_PATH=$(readlink -f $5)
 CONFIG_FILE_NAME="$6"
 
-EC2_INSTANCE_ID=$(wget -q -O - http://instance-data/latest/meta-data/instance-id)
+EC2_INSTANCE_ID=$(ec2metadata --instance-id)
 
 # Find the revisions we actually checked out so that we can pass these to the
 # web server because indexer and web server are a matched pair and we don't
@@ -123,7 +123,7 @@ release* )
     ;;
 esac
 
-$AWS_ROOT/send-warning-email.py "$CHANNEL/$BRANCH" "$DEST_EMAIL"
+$AWS_ROOT/send-warning-email.py "$AWS_ROOT/warning-suppression.patterns" "$CHANNEL/$BRANCH" "$DEST_EMAIL" /home/ubuntu/index-log
 
 gzip -k ~ubuntu/index-log
 $AWS_ROOT/upload.py ~ubuntu/index-log.gz indexer-logs "index-$(date -Iminutes)_${CHANNEL}_${CONFIG_FILE_NAME%.*}.gz"

@@ -280,7 +280,13 @@ const FILENAME_INTERVENTIONS = [
     includes_list: ["/wubkat/"],
     severity: "INFO",
     prepend: "Wubkat failsafe: "
-  }
+  },
+  {
+    includes_list: ["devtools/client/debugger/test/mochitest/examples/inline-preview.js",
+                    "devtools/client/debugger/test/mochitest/examples/preview.js"],
+    severity: "INFO",
+    prepend: "It may contain experimental syntax: ",
+  },
 ];
 
 function logError(msg)
@@ -2428,6 +2434,17 @@ function resetState() {
   Analyzer.resetState();
 }
 
+
+function decodeUTF8(s) {
+  if (s.match(/[^\x00-\x7F]/)) {
+    return decodeURIComponent(s.replace(/./g, m => {
+      return "%" + m.charCodeAt(0).toString(16).padStart(2, '0');
+    }));
+  }
+
+  return s;
+}
+
 mozSearchRoot = scriptArgs[0];
 const localRoot = scriptArgs[1];
 const analysisRoot = scriptArgs[2];
@@ -2440,14 +2457,21 @@ while (true) {
 
   resetState();
 
-  let sourcePath;
-  [fileIndex, sourcePath] = line.split(/ /);
+  const m = line.match(/^([^ ]+) (.+)$/);
+  if (!m) {
+    continue;
+  }
+  fileIndex = m[1];
+
+  // readline() returns raw byte sequence.
+  // The filename is UTF-8 encoded in the js-files file.
+  const sourcePath = decodeUTF8(m[2]);
 
   localFile = localRoot + "/" + sourcePath;
   const analysisFile = analysisRoot + "/" + sourcePath;
 
   const origOut = os.file.redirect(analysisFile);
-  
+
   printFileTarget(sourcePath);
 
   analyzeFile(localFile);

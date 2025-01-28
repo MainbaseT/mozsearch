@@ -1,13 +1,11 @@
-use std::{
-    env::args_os,
-};
+use std::env::args_os;
 
-use serde_json::{to_string_pretty, Value, to_value};
+use serde_json::{to_string_pretty, to_value, Value};
 use tools::{
     abstract_server::{ErrorDetails, ErrorLayer, ServerError},
     cmd_pipeline::{builder::build_pipeline, parser::OutputFormat, PipelineValues},
 };
-use tracing_subscriber::{EnvFilter, fmt, prelude::*};
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 #[tokio::main]
 async fn main() {
@@ -27,7 +25,7 @@ async fn main() {
             "This command expects a single argument that it can parse up; quote in your shell."
         );
         println!("Example: `searchfox-tool 'cmd1 --arg | cmd2 --arg | cmd3'");
-        println!("");
+        println!();
         println!(
             "The built-in help will work, but the arg parser gets invoked once for each pipe."
         );

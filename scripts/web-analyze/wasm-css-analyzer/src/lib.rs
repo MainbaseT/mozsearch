@@ -1,5 +1,4 @@
 use tools::css_analyzer;
-use js_sys;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

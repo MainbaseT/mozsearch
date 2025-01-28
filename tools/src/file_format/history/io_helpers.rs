@@ -21,12 +21,9 @@ pub fn read_record_file_contents<
     Some((header, records))
 }
 
-pub fn record_file_contents_to_string<
-    Header: Serialize,
-    Record: Serialize,
->(
+pub fn record_file_contents_to_string<Header: Serialize, Record: Serialize>(
     header: &Header,
-    records: &Vec<Record>,
+    records: &[Record],
 ) -> String {
     let header_iter = std::iter::once(to_string(&header).unwrap());
     let records_iter = records.iter().map(|rec| to_string(rec).unwrap());
