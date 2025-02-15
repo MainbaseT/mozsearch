@@ -6,8 +6,8 @@ use std::{
 
 use axum::{
     extract::{Path, Query},
-    http::{HeaderMap, StatusCode},
-    response::{IntoResponse, Response, Html},
+    http::{header, HeaderMap, StatusCode},
+    response::{Html, IntoResponse, Response},
     routing::get,
     Extension, Json, Router,
 };
@@ -17,8 +17,9 @@ use serde_json::Value;
 use tools::{
     abstract_server::{make_all_local_servers, AbstractServer, ServerError},
     cmd_pipeline::{builder::build_pipeline_graph, PipelineValues},
+    logging::{init_logging, LoggedSpan},
     query::chew_query::chew_query,
-    templating::builder::build_and_parse_query_results, logging::{LoggedSpan, init_logging},
+    templating::builder::build_and_parse_query_results,
 };
 use tracing::Instrument;
 
@@ -42,7 +43,11 @@ async fn handle_query(
     }
 
     let maybe_log = params.contains_key("debug");
-    let logged_span: Option<LoggedSpan> = if maybe_log { Some(LoggedSpan::new_logged_span("query")) } else { None };
+    let logged_span: Option<LoggedSpan> = if maybe_log {
+        Some(LoggedSpan::new_logged_span("query"))
+    } else {
+        None
+    };
 
     let query = match params.get("q") {
         Some(q) => q,
@@ -52,10 +57,9 @@ async fn handle_query(
     };
 
     let graph = {
-        let _log_entered = match &logged_span {
-            Some(lspan) => Some(lspan.span.clone().entered()),
-            _ => None,
-        };
+        let _log_entered = logged_span
+            .as_ref()
+            .map(|lspan| lspan.span.clone().entered());
 
         let pipeline_plan = chew_query(query)?;
 
@@ -69,16 +73,18 @@ async fn handle_query(
 
     let accept = headers
         .get("accept")
-        .map(|x| x.to_str().unwrap_or_else(|_| "text/html"));
-    let make_html = match accept {
-        Some("application/json") => false,
-        _ => true,
-    };
+        .map(|x| x.to_str().unwrap_or("text/html"));
+    let make_html = !matches!(accept, Some("application/json"));
 
     let logs = match logged_span {
         Some(lspan) => lspan.retrieve_serde_json().await,
         _ => Value::Null,
     };
+
+    // There are a bunch of ways to return headers to axum; this is the most
+    // legible I found.
+    let mut header_map = HeaderMap::new();
+    header_map.insert(header::VARY, "Accept".parse().unwrap());
 
     if make_html {
         let sym_info_str = match &result {
@@ -86,7 +92,8 @@ async fn handle_query(
                 serde_json::to_string(&grb.symbols).unwrap_or_else(|_| "{}".to_string())
             }
             PipelineValues::SymbolTreeTableList(sttl) => {
-                serde_json::to_string(&sttl.unioned_node_sets_as_jumprefs()).unwrap_or_else(|_| "{}".to_string())
+                serde_json::to_string(&sttl.unioned_node_sets_as_jumprefs())
+                    .unwrap_or_else(|_| "{}".to_string())
             }
             _ => "{}".to_string(),
         };
@@ -101,9 +108,9 @@ async fn handle_query(
         });
 
         let output = templates.query_results.render(&globals)?;
-        Ok(Html(output).into_response())
+        Ok((header_map, Html(output)).into_response())
     } else {
-        Ok(Json(result).into_response())
+        Ok((header_map, Json(result)).into_response())
     }
 }
 

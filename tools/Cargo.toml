@@ -27,6 +27,7 @@ clap = { version = "4.0", features = ["cargo", "derive", "env"] }
 dot-generator = "0.2.0"
 dot-structures = "0.1.0"
 env_logger = "0.7.1"
+fantoccini = "0.19.3"
 flate2 = { version = "1", features = ["tokio"] }
 futures-core = "0.3.17"
 getopts = "0.2.19"
@@ -35,7 +36,7 @@ git2 = "0.16.1"
 globset = "0.4.8"
 hyper = "0.10"
 include_dir = "0.7.2"
-insta = { version = "1.14.0", features = ["json"] }
+insta = { version = "1.39.0", features = ["json"] }
 ipdl_parser = { path = "./ipdl_parser" }
 json-structural-diff = "0.1.0"
 lazy_static = "1.1"
@@ -60,15 +61,20 @@ scip = "0.3.3"
 #       The "std" feature should be enabled only for non-wasm case.
 serde_json = { version = "1.0.113", features = ["preserve_order", "std"] }
 shell-words = "1.0.0"
+termcolor = "1.4.1"
 tokio = { version = "1.6.0", features = ["rt-multi-thread", "net", "macros", "fs", "io-util", "signal"] }
 tokio-stream = "0.1.8"
-tree-sitter = "0.20.9"
-tree-sitter-mozcpp = "0.20.2"
-tree-sitter-python = "0.20.2"
-tree-sitter-rust = "0.20.3"
-tree-sitter-typescript = "0.20.2"
-tree-sitter-java = "0.20.2"
-tree-sitter-kotlin = { git = "https://github.com/fwcd/tree-sitter-kotlin.git", rev = "5b7ca7a611eac3234cd0a38b6257effa8888f89d" }
+tree-sitter = "0.23.0"
+# We previously used tree-sitter-mozcpp because it understands our XPCOM
+# macrology and doesn't freak out, but since it is only used for our WIP
+# hyperblame implementation and lags behind on updates, we are switching to
+# tree-sitter-cpp for now.
+tree-sitter-cpp = "0.23.0"
+tree-sitter-python = "0.23.2"
+tree-sitter-rust = "0.23.0"
+tree-sitter-typescript = "0.23.0"
+tree-sitter-java = "0.23.2"
+tree-sitter-kotlin-ng = "1.0.1"
 toml = "0.7.3"
 tonic = "0.7.1"
 tracing = "0.1.37"

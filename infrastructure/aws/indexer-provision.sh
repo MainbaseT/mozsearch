@@ -21,17 +21,31 @@ chmod a+rx ~
 sudo apt-get update
 
 # We want the NVME tools, that's how EBS gets mounted now on "nitro" instances.
-sudo apt-get install -y nvme-cli
+# We need unzip to install the AWS CLI
+sudo apt-get install -y nvme-cli unzip
 
 # In order to do the re-partitioning again, we need jq now, even though we'll
 # also try and install it in the non-AWS scripts.
 sudo apt-get install -y jq
 
-# Need pip3 to get the awscli
-sudo apt-get install -y python3-pip
+# Install AWS scripts and command-line tool.
+#
+# In order to get the AWS CLI v2 the current options[1] are to use snap or do
+# the curl + shell dance.  We don't have snap support installed by default and are
+# currently intentionally avoiding adding snaps, so we choose curl + shell.
+#
+# 1: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+#
+# awscli can get credentials via `Ec2InstanceMetadata` which will give it the
+# authorities of the role assigned to the image it's running in.  Look for the
+# `IamInstanceProfile` definition in `trigger_indexer.py` and similar.
 
-# Need AWS client too.
-sudo pip3 install boto3 awscli rich
+mkdir -p awscliv2-install
+pushd awscliv2-install
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+popd
 
 date
 
@@ -47,12 +61,14 @@ date
 # command.  Note that the select constraint here is intended more as a check
 # that our assumption about partition sizes hasn't changed, as when provisioning
 # there should only be this single EBS mount.
-ROOT_VOL_ID=$(sudo nvme list -o json | jq --raw-output '.Devices[] | select(.PhysicalSize < 9000000000) | .SerialNumber | sub("^vol"; "vol-")')
+ROOT_DEV_INFO=$(sudo nvme list -o json | jq --raw-output '.Devices[] | select(.PhysicalSize < 9000000000)')
+ROOT_VOL_ID=$(jq -M -r '.SerialNumber | sub("^vol"; "vol-")' <<< "$ROOT_DEV_INFO")
+ROOT_DEV=$(jq -M -r '.DevicePath' <<< "$ROOT_DEV_INFO")
+
 AWS_REGION=us-west-2
 # The size is in gigs.
 aws ec2 modify-volume --region ${AWS_REGION} --volume-id ${ROOT_VOL_ID} --size 20
-# Re: hardcoded devices: The devices should currently be stable.
-#
+
 # We use an until loop because it can take some time for the change to
 # propagate to this VM.  The error will look like:
 #   "NOCHANGE: partition 1 is size 16775135. it cannot be grown"
@@ -61,10 +77,12 @@ aws ec2 modify-volume --region ${AWS_REGION} --volume-id ${ROOT_VOL_ID} --size 2
 #
 # The 5 is arbitrary in both cases.
 sleep 5
-until sudo growpart /dev/nvme0n1 1
+# note the partition is the 2nd arg here
+until sudo growpart ${ROOT_DEV} 1
 do
   sleep 5
 done
-sudo resize2fs /dev/nvme0n1p1
+# and here we identify the partition as part of the block device
+sudo resize2fs ${ROOT_DEV}p1
 
 date

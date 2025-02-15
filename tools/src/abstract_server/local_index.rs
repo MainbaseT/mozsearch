@@ -17,10 +17,13 @@ use super::server_interface::{
 use super::{TextMatches, TextMatchesByFile, TreeInfo};
 
 use crate::abstract_server::lazy_crossref::perform_lazy_crossref;
+use crate::file_format::analysis::{read_analyses, read_source};
 use crate::file_format::config::{load, TreeConfig, TreeConfigPaths};
 use crate::file_format::crossref_lookup::CrossrefLookupMap;
 use crate::file_format::identifiers::IdentMap;
 use crate::file_format::per_file_info::FileLookupMap;
+use crate::format::format_code;
+use crate::languages::select_formatting;
 
 pub mod livegrep {
     tonic::include_proto!("_");
@@ -86,7 +89,7 @@ async fn read_gzipped_ndjson_from_file(path: &str) -> Result<Vec<Value>> {
 
     raw_str
         .lines()
-        .map(|s| from_str(s).map_err(|e| ServerError::from(e)))
+        .map(|s| from_str(s).map_err(ServerError::from))
         .collect()
 }
 
@@ -128,6 +131,19 @@ pub struct LocalIndex {
     file_lookup_map: FileLookupMap,
 }
 
+impl LocalIndex {
+    fn normalize_and_validate_path<'a>(&self, sf_path: &'a str) -> Result<&'a str> {
+        // We normalize off any leading "/" mainly to support our test cases
+        // being able to use "/" to indicate they're interested in a root dir.
+        let norm_path = sf_path.strip_prefix('/').unwrap_or(sf_path);
+        // We don't want anyone trying to construct a path that escapes the
+        // sub-tree.
+        validate_absoluteish_path(norm_path)?;
+
+        Ok(norm_path)
+    }
+}
+
 #[async_trait]
 impl AbstractServer for LocalIndex {
     fn clonify(&self) -> Box<dyn AbstractServer + Send + Sync> {
@@ -162,34 +178,24 @@ impl AbstractServer for LocalIndex {
         }
     }
 
-    async fn fetch_raw_analysis(&self, sf_path: &str) -> Result<BoxStream<Value>> {
-        // We normalize off any leading "/" mainly to support our test cases
-        // being able to use "/" to indicate they're interested in a root dir.
-        let norm_path = if sf_path.starts_with('/') {
-            &sf_path[1..]
-        } else {
-            sf_path
-        };
-        // We don't want anyone trying to construct a path that escapes the
-        // sub-tree.
-        validate_absoluteish_path(norm_path)?;
-        let full_path = format!("{}/analysis/{}.gz", self.config_paths.index_path, norm_path);
+    async fn fetch_raw_analysis<'a>(&self, sf_path: &str) -> Result<BoxStream<'a, Value>> {
+        let norm_path = self.normalize_and_validate_path(sf_path)?;
+        let full_path = self.translate_path(SearchfoxIndexRoot::CompressedAnalysis, norm_path)?;
         let values = read_gzipped_ndjson_from_file(&full_path).await?;
         Ok(Box::pin(tokio_stream::iter(values)))
     }
 
     async fn fetch_raw_source(&self, sf_path: &str) -> Result<String> {
-        // We normalize off any leading "/" mainly to support our test cases
-        // being able to use "/" to indicate they're interested in a root dir.
-        let norm_path = if sf_path.starts_with('/') {
-            &sf_path[1..]
+        let norm_path = self.normalize_and_validate_path(sf_path)?;
+        let full_path = if norm_path.starts_with("__GENERATED__/") {
+            format!(
+                "{}/{}",
+                self.config_paths.objdir_path,
+                norm_path.strip_prefix("__GENERATED__/").unwrap()
+            )
         } else {
-            sf_path
+            format!("{}/{}", self.config_paths.files_path, norm_path)
         };
-        // We don't want anyone trying to construct a path that escapes the
-        // sub-tree.
-        validate_absoluteish_path(norm_path)?;
-        let full_path = format!("{}/{}", self.config_paths.files_path, norm_path);
 
         let mut f = File::open(full_path).await?;
         let mut raw_str = String::new();
@@ -197,17 +203,34 @@ impl AbstractServer for LocalIndex {
         Ok(raw_str)
     }
 
+    async fn fetch_formatted_lines(&self, sf_path: &str) -> Result<(Vec<String>, String)> {
+        let norm_path = self.normalize_and_validate_path(sf_path)?;
+        let source = self.fetch_raw_source(sf_path).await?;
+        let analysis_path =
+            self.translate_path(SearchfoxIndexRoot::CompressedAnalysis, norm_path)?;
+        let analysis = read_analyses(&[analysis_path], &mut read_source);
+
+        let jumpref_path = format!("{}/jumpref", self.config_paths.index_path);
+        let jumpref_extra_path = format!("{}/jumpref-extra", self.config_paths.index_path);
+
+        let jumpref_lookup_map = CrossrefLookupMap::new(&jumpref_path, &jumpref_extra_path);
+
+        let (raw_lines, sym_json) = format_code(
+            None,
+            &jumpref_lookup_map,
+            select_formatting(sf_path),
+            sf_path,
+            source.as_str(),
+            &analysis,
+        );
+
+        let lines = raw_lines.into_iter().map(|line| line.line).collect();
+
+        Ok((lines, sym_json))
+    }
+
     async fn fetch_html(&self, root: HtmlFileRoot, sf_path: &str) -> Result<String> {
-        // We normalize off any leading "/" mainly to support our test cases
-        // being able to use "/" to indicate they're interested in a root dir.
-        let norm_path = if sf_path.starts_with('/') {
-            &sf_path[1..]
-        } else {
-            sf_path
-        };
-        // We don't want anyone trying to construct a path that escapes the
-        // sub-tree.
-        validate_absoluteish_path(norm_path)?;
+        let norm_path = self.normalize_and_validate_path(sf_path)?;
         let (full_path, is_gzipped) = match root {
             HtmlFileRoot::FormattedFile => (
                 format!("{}/file/{}.gz", self.config_paths.index_path, norm_path),
@@ -220,7 +243,7 @@ impl AbstractServer for LocalIndex {
                 // to do either.  The exception is that for the root directory, ""
                 // is the right choice because our "no leading /" rule trumps our
                 // "yes trailing /" rule for path manipulation.
-                let norm_path = if norm_path == "" {
+                let norm_path = if norm_path.is_empty() {
                     "".to_string()
                 } else if norm_path.ends_with('/') {
                     norm_path.to_string()
@@ -275,7 +298,7 @@ impl AbstractServer for LocalIndex {
             symbol
         );
         if result.is_ok() && extra_processing {
-            perform_lazy_crossref(&self, result.unwrap()).await
+            perform_lazy_crossref(self, result.unwrap()).await
         } else {
             result
         }
@@ -344,13 +367,22 @@ impl AbstractServer for LocalIndex {
 
         let mut client = CodeSearchClient::connect(endpoint).await?;
 
+        // Before multiple paths were allowed, an empty path constraint allowed
+        // us to skip the match; now if we pass an empty path in a vec, that
+        // will fail to match, so we want to pass an empty vec.
+        let use_path = if path.is_empty() {
+            vec![]
+        } else {
+            vec![path.into()]
+        };
+
         let query = tonic::Request::new(Query {
             line: pattern.into(),
-            file: path.into(),
+            file: use_path,
             repo: "".into(),
             tags: "".into(),
             fold_case,
-            not_file: "".into(),
+            not_file: vec![],
             not_repo: "".into(),
             not_tags: "".into(),
             // 0 falls back to the default, I believe.
@@ -381,7 +413,7 @@ impl AbstractServer for LocalIndex {
                     let path_kind = self
                         .file_lookup_map
                         .lookup_file_from_ustr(&path)
-                        .map_or_else(|| ustr(""), |fi| fi.path_kind.clone());
+                        .map_or_else(|| ustr(""), |fi| fi.path_kind);
                     TextMatchesByFile {
                         file: path,
                         path_kind,
@@ -454,8 +486,8 @@ pub fn make_local_server(
     config_path: &str,
     tree_name: &str,
 ) -> Result<Box<dyn AbstractServer + Send + Sync>> {
-    let mut config = load(config_path, false, Some(&tree_name));
-    let tree_config = match config.trees.remove(&tree_name.to_string()) {
+    let mut config = load(config_path, false, Some(tree_name), None, None);
+    let tree_config = match config.trees.remove(tree_name) {
         Some(t) => t,
         None => {
             return Err(ServerError::StickyProblem(ErrorDetails {
@@ -471,7 +503,7 @@ pub fn make_local_server(
 pub fn make_all_local_servers(
     config_path: &str,
 ) -> Result<BTreeMap<String, Box<dyn AbstractServer + Send + Sync>>> {
-    let config = load(config_path, false, None);
+    let config = load(config_path, false, None, None, None);
     let mut servers = BTreeMap::new();
     for (tree_name, tree_config) in config.trees {
         let server = fab_server(tree_config, &tree_name, &config.config_repo_path)?;

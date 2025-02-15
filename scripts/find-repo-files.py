@@ -23,7 +23,7 @@ except FileNotFoundError:
 
 tree_config = config['trees'][tree_name]
 tree_repo = tree_config['files_path']
-lines = run(['git', 'ls-files', '--recurse-submodules'], cwd=tree_repo).splitlines()
+lines = run(['git', 'ls-files', '-z', '--recurse-submodules'], cwd=tree_repo).split(b'\0')
 if len(lines) == 0:
     # find . -type f -printf '%P\n'
     lines = run(['/usr/bin/find', '.', '-type', 'f', '-printf', '%P\n'], cwd=tree_repo).splitlines()
@@ -36,7 +36,9 @@ js = []
 html = []
 css = []
 idl = []
+webidl = []
 ipdl = []
+staticprefs = []
 
 dirs = collections.OrderedDict()
 ipdl_dirs = collections.OrderedDict()
@@ -46,6 +48,16 @@ for line in lines:
     if not path:
         continue
     path = path.decode()
+
+    # NOTE: `path` is raw filename, which can contain any character allowed by
+    # the OS and the file system.
+    #
+    # For safety, ignore the path with characters that may have special meaning
+    # in the HTML context or the shell command context.
+    # They are not allowed on Windows, but allowed on other OS.
+    for c in ['"', '<', '>', '\\']:
+        if c in path:
+            continue
 
     fullpath = os.path.join(tree_repo, path)
 
@@ -64,6 +76,13 @@ for line in lines:
                 continue
 
         idl.append(path + '\n')
+
+    if ext == '.webidl':
+        if 'filter_webidl' in repo_files:
+            if not repo_files['filter_webidl'](path):
+                continue
+
+        webidl.append(path + '\n')
 
     if ext in ['.ipdl', '.ipdlh']:
         if 'filter_ipdl' in repo_files:
@@ -96,6 +115,11 @@ for line in lines:
 
         css.append(path + '\n')
 
+    name = os.path.basename(path)
+
+    if name == 'StaticPrefList.yaml':
+        staticprefs.append(path + '\n')
+
 index_path = tree_config['index_path']
 open(os.path.join(index_path, 'repo-files'), 'w').writelines(files)
 open(os.path.join(index_path, 'repo-dirs'), 'w').writelines([d + '\n' for d in dirs])
@@ -103,5 +127,7 @@ open(os.path.join(index_path, 'js-files'), 'w').writelines(js)
 open(os.path.join(index_path, 'html-files'), 'w').writelines(html)
 open(os.path.join(index_path, 'css-files'), 'w').writelines(css)
 open(os.path.join(index_path, 'idl-files'), 'w').writelines(idl)
+open(os.path.join(index_path, 'webidl-files'), 'w').writelines(webidl)
 open(os.path.join(index_path, 'ipdl-files'), 'w').writelines(ipdl)
 open(os.path.join(index_path, 'ipdl-includes'), 'w').write(' '.join(['-I ' + d for d in ipdl_dirs]))
+open(os.path.join(index_path, 'staticprefs-files'), 'w').writelines(staticprefs)

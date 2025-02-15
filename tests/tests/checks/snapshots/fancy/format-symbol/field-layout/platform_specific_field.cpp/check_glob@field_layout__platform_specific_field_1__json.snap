@@ -19,6 +19,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::platform_specific_field::S1",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -46,6 +47,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::platform_specific_field::S1",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -73,6 +75,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::platform_specific_field::S1",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -100,6 +103,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::platform_specific_field::S2",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -127,6 +131,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::platform_specific_field::S2",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -154,6 +159,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_field_layout::platform_specific_field::S3",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -180,6 +186,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 8,
+            "alignmentBytes": 4,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -226,6 +233,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#8",
                 "pretty": "field_layout::platform_specific_field::S1::f1",
                 "sym": "F_<T_field_layout::platform_specific_field::S1>_f1",
                 "type": "unsigned int",
@@ -235,6 +243,7 @@ expression: "&to_value(sttl).unwrap()"
                 "sizeBytes": 4
               },
               {
+                "lineRange": "#15",
                 "pretty": "field_layout::platform_specific_field::S1::f3",
                 "sym": "F_<T_field_layout::platform_specific_field::S1>_f3",
                 "type": "unsigned char",
@@ -259,6 +268,7 @@ expression: "&to_value(sttl).unwrap()"
                 "subsystem": null,
                 "implKind": "",
                 "sizeBytes": 8,
+                "alignmentBytes": 4,
                 "ownVFPtrBytes": null,
                 "bindingSlots": [],
                 "ontologySlots": [],
@@ -305,6 +315,7 @@ expression: "&to_value(sttl).unwrap()"
                 ],
                 "fields": [
                   {
+                    "lineRange": "#8",
                     "pretty": "field_layout::platform_specific_field::S1::f1",
                     "sym": "F_<T_field_layout::platform_specific_field::S1>_f1",
                     "type": "unsigned int",
@@ -314,6 +325,7 @@ expression: "&to_value(sttl).unwrap()"
                     "sizeBytes": 4
                   },
                   {
+                    "lineRange": "#11",
                     "pretty": "field_layout::platform_specific_field::S1::f2",
                     "sym": "F_<T_field_layout::platform_specific_field::S1>_f2",
                     "type": "unsigned int",
@@ -352,6 +364,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 12,
+            "alignmentBytes": 4,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -404,6 +417,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#20",
                 "pretty": "field_layout::platform_specific_field::S2::f4",
                 "sym": "F_<T_field_layout::platform_specific_field::S2>_f4",
                 "type": "unsigned int",
@@ -428,6 +442,7 @@ expression: "&to_value(sttl).unwrap()"
                 "subsystem": null,
                 "implKind": "",
                 "sizeBytes": 16,
+                "alignmentBytes": 4,
                 "ownVFPtrBytes": null,
                 "bindingSlots": [],
                 "ontologySlots": [],
@@ -480,6 +495,7 @@ expression: "&to_value(sttl).unwrap()"
                 ],
                 "fields": [
                   {
+                    "lineRange": "#20",
                     "pretty": "field_layout::platform_specific_field::S2::f4",
                     "sym": "F_<T_field_layout::platform_specific_field::S2>_f4",
                     "type": "unsigned int",
@@ -489,6 +505,7 @@ expression: "&to_value(sttl).unwrap()"
                     "sizeBytes": 4
                   },
                   {
+                    "lineRange": "#23",
                     "pretty": "field_layout::platform_specific_field::S2::f5",
                     "sym": "F_<T_field_layout::platform_specific_field::S2>_f5",
                     "type": "unsigned char",
@@ -527,6 +544,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": null,
             "implKind": "",
             "sizeBytes": 16,
+            "alignmentBytes": 4,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -570,6 +588,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#28",
                 "pretty": "field_layout::platform_specific_field::S3::f6",
                 "sym": "F_<T_field_layout::platform_specific_field::S3>_f6",
                 "type": "unsigned char",
@@ -591,6 +610,7 @@ expression: "&to_value(sttl).unwrap()"
                 "subsystem": null,
                 "implKind": "",
                 "sizeBytes": 16,
+                "alignmentBytes": 4,
                 "ownVFPtrBytes": null,
                 "bindingSlots": [],
                 "ontologySlots": [],
@@ -634,6 +654,7 @@ expression: "&to_value(sttl).unwrap()"
                 ],
                 "fields": [
                   {
+                    "lineRange": "#28",
                     "pretty": "field_layout::platform_specific_field::S3::f6",
                     "sym": "F_<T_field_layout::platform_specific_field::S3>_f6",
                     "type": "unsigned char",
@@ -670,6 +691,21 @@ expression: "&to_value(sttl).unwrap()"
         {
           "name": "field_layout::platform_specific_field::S3",
           "symbols": "T_field_layout::platform_specific_field::S3",
+          "isBaseClass": false,
+          "alignmentAndSize": [
+            {
+              "alignment": "align(4)",
+              "size": "16"
+            },
+            {
+              "alignment": "align(4)",
+              "size": "16"
+            },
+            {
+              "alignment": "align(4)",
+              "size": "16"
+            }
+          ],
           "items": [
             {
               "Field": {
@@ -680,6 +716,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned char",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::platform_specific_field::S3>_f6\" data-confidences=\"[&quot;concrete&quot;]\">f6</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -707,8 +746,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::platform_specific_field::S2 (base class)",
+          "name": "field_layout::platform_specific_field::S2",
           "symbols": "T_field_layout::platform_specific_field::S2",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -719,6 +760,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned int",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint32_t\" data-confidences=\"[&quot;concrete&quot;]\">uint32_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::platform_specific_field::S2>_f4\" data-confidences=\"[&quot;concrete&quot;]\">f4</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -746,6 +790,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::platform_specific_field::S2>_f5\" data-confidences=\"[&quot;concrete&quot;]\">f5</span>;"
+                ],
                 "offsetAndSize": [
                   null,
                   null,
@@ -759,8 +806,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "field_layout::platform_specific_field::S1 (base class)",
+          "name": "field_layout::platform_specific_field::S1",
           "symbols": "T_field_layout::platform_specific_field::S1",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -771,6 +820,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "unsigned int",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint32_t\" data-confidences=\"[&quot;concrete&quot;]\">uint32_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::platform_specific_field::S1>_f1\" data-confidences=\"[&quot;concrete&quot;]\">f1</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -798,6 +850,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint32_t\" data-confidences=\"[&quot;concrete&quot;]\">uint32_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::platform_specific_field::S1>_f2\" data-confidences=\"[&quot;concrete&quot;]\">f2</span>;"
+                ],
                 "offsetAndSize": [
                   null,
                   {
@@ -821,6 +876,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"TA_uint8_t\" data-confidences=\"[&quot;concrete&quot;]\">uint8_t</span> <span class=\"syn_def\" data-symbols=\"F_<T_field_layout::platform_specific_field::S1>_f3\" data-confidences=\"[&quot;concrete&quot;]\">f3</span>;"
+                ],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x4",
@@ -842,5 +900,6 @@ expression: "&to_value(sttl).unwrap()"
         }
       ]
     }
-  ]
+  ],
+  "className": null
 }

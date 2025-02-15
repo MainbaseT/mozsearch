@@ -13,22 +13,22 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 351,
+                "lno": 331,
                 "bounds": [
                   0,
                   8
                 ],
-                "line": "OuterCat *cat = (OuterCat *)raw;",
+                "line": "OuterCat* cat = (OuterCat*)raw;",
                 "context": "outerNS::OuterCat::CycleCollectingCat::unlink",
                 "contextsym": "_ZN7outerNS8OuterCat18CycleCollectingCat6unlinkEPv"
               },
               {
-                "lno": 351,
+                "lno": 331,
                 "bounds": [
                   17,
                   25
                 ],
-                "line": "OuterCat *cat = (OuterCat *)raw;",
+                "line": "OuterCat* cat = (OuterCat*)raw;",
                 "context": "outerNS::OuterCat::CycleCollectingCat::unlink",
                 "contextsym": "_ZN7outerNS8OuterCat18CycleCollectingCat6unlinkEPv"
               }
@@ -41,7 +41,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 227,
+                "lno": 210,
                 "bounds": [
                   6,
                   14
@@ -49,44 +49,32 @@ expression: "&to_value(scil).unwrap()"
                 "line": "class OuterCat : Thing {",
                 "context": "",
                 "contextsym": "",
-                "peekRange": "227-227"
+                "peekRange": "210-210"
               }
             ]
           }
         ],
         "callees": [
           {
-            "jump": "big_cpp.cpp#268",
-            "kind": "field",
-            "pretty": "outerNS::OuterCat::mIsFriendly",
-            "sym": "F_<T_outerNS::OuterCat>_mIsFriendly"
-          },
-          {
-            "jump": "big_cpp.cpp#272",
-            "kind": "field",
-            "pretty": "outerNS::OuterCat::mIsSecretlyUnfriendly",
-            "sym": "F_<T_outerNS::OuterCat>_mIsSecretlyUnfriendly"
-          },
-          {
-            "jump": "big_cpp.cpp#245",
+            "jump": "big_cpp.cpp#228",
             "kind": "class",
             "pretty": "outerNS::Couch",
             "sym": "T_outerNS::Couch"
           },
           {
-            "jump": "big_cpp.cpp#244",
+            "jump": "big_cpp.cpp#227",
             "kind": "class",
             "pretty": "outerNS::Human",
             "sym": "T_outerNS::Human"
           },
           {
-            "jump": "big_cpp.cpp#357",
+            "jump": "big_cpp.cpp#337",
             "kind": "class",
             "pretty": "outerNS::OuterCat::CycleCollectingCat",
             "sym": "T_outerNS::OuterCat::CycleCollectingCat"
           },
           {
-            "jump": "big_cpp.cpp#227",
+            "jump": "big_cpp.cpp#210",
             "kind": "class",
             "pretty": "outerNS::Thing",
             "sym": "T_outerNS::Thing"
@@ -101,6 +89,7 @@ expression: "&to_value(scil).unwrap()"
           "subsystem": "Core/Big",
           "implKind": "",
           "sizeBytes": 40,
+          "alignmentBytes": 8,
           "ownVFPtrBytes": null,
           "bindingSlots": [],
           "ontologySlots": [],
@@ -232,6 +221,7 @@ expression: "&to_value(scil).unwrap()"
           ],
           "fields": [
             {
+              "lineRange": "#224",
               "pretty": "outerNS::OuterCat::mIsFriendly",
               "sym": "F_<T_outerNS::OuterCat>_mIsFriendly",
               "type": "_Bool",
@@ -241,6 +231,7 @@ expression: "&to_value(scil).unwrap()"
               "sizeBytes": 1
             },
             {
+              "lineRange": "#225",
               "pretty": "outerNS::OuterCat::mIsSecretlyUnfriendly",
               "sym": "F_<T_outerNS::OuterCat>_mIsSecretlyUnfriendly",
               "type": "_Bool",
@@ -250,6 +241,7 @@ expression: "&to_value(scil).unwrap()"
               "sizeBytes": 1
             },
             {
+              "lineRange": "#227",
               "pretty": "outerNS::OuterCat::mOwner",
               "sym": "F_<T_outerNS::OuterCat>_mOwner",
               "type": "class std::shared_ptr<class outerNS::Human>",
@@ -268,6 +260,7 @@ expression: "&to_value(scil).unwrap()"
               ]
             },
             {
+              "lineRange": "#228",
               "pretty": "outerNS::OuterCat::mFavoriteCouch",
               "sym": "F_<T_outerNS::OuterCat>_mFavoriteCouch",
               "type": "class outerNS::Couch *",
@@ -307,7 +300,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 172,
+                "lno": 165,
                 "bounds": [
                   5,
                   10
@@ -317,27 +310,27 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "_ZN7outerNS5Thing6ignoreEv"
               },
               {
-                "lno": 185,
+                "lno": 178,
                 "bounds": [
-                  20,
-                  25
+                  21,
+                  26
                 ],
-                "line": "class Human: public Thing {",
+                "line": "class Human : public Thing {",
                 "context": "outerNS::Human",
                 "contextsym": "T_outerNS::Human"
               },
               {
-                "lno": 189,
+                "lno": 180,
                 "bounds": [
-                  2,
-                  7
+                  10,
+                  15
                 ],
-                "line": ": Thing(HUMAN_HP) {",
+                "line": "Human() : Thing(HUMAN_HP) {}",
                 "context": "outerNS::Human::Human",
                 "contextsym": "_ZN7outerNS5HumanC1Ev"
               },
               {
-                "lno": 211,
+                "lno": 196,
                 "bounds": [
                   21,
                   26
@@ -347,17 +340,17 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "T_outerNS::Couch"
               },
               {
-                "lno": 215,
+                "lno": 198,
                 "bounds": [
-                  2,
-                  7
+                  26,
+                  31
                 ],
-                "line": ": Thing (couchHP) {",
+                "line": "Couch(int couchHP = 20) : Thing(couchHP) {",
                 "context": "outerNS::Couch::Couch",
                 "contextsym": "_ZN7outerNS5CouchC1Ei"
               },
               {
-                "lno": 227,
+                "lno": 210,
                 "bounds": [
                   17,
                   22
@@ -367,37 +360,37 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "T_outerNS::OuterCat"
               },
               {
-                "lno": 267,
+                "lno": 250,
                 "bounds": [
                   2,
                   7
                 ],
-                "line": ": Thing(9 * HUMAN_HP)",
+                "line": ": Thing(9 * HUMAN_HP),",
                 "context": "outerNS::OuterCat::OuterCat",
                 "contextsym": "_ZN7outerNS8OuterCatC1Ebb"
               },
               {
-                "lno": 410,
+                "lno": 387,
                 "bounds": [
                   11,
                   16
                 ],
-                "line": "void shred(Thing &thing) {",
+                "line": "void shred(Thing& thing) { thing.takeDamage(1); }",
                 "context": "outerNS::OuterCat::shred",
                 "contextsym": "_ZN7outerNS8OuterCat5shredERNS_5ThingE"
               },
               {
-                "lno": 417,
+                "lno": 392,
                 "bounds": [
                   13,
                   18
                 ],
-                "line": "void destroy(Thing &thing) {",
+                "line": "void destroy(Thing& thing) {",
                 "context": "outerNS::OuterCat::destroy",
                 "contextsym": "_ZN7outerNS8OuterCat7destroyERNS_5ThingE"
               },
               {
-                "lno": 437,
+                "lno": 412,
                 "bounds": [
                   27,
                   32
@@ -407,12 +400,12 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "T_outerNS::AbstractArt"
               },
               {
-                "lno": 440,
+                "lno": 414,
                 "bounds": [
-                  2,
-                  7
+                  16,
+                  21
                 ],
-                "line": ": Thing(ART_HP) {}",
+                "line": "AbstractArt() : Thing(ART_HP) {}",
                 "context": "outerNS::AbstractArt::AbstractArt",
                 "contextsym": "_ZN7outerNS11AbstractArtC1Ev"
               }
@@ -425,7 +418,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 141,
+                "lno": 136,
                 "bounds": [
                   6,
                   11
@@ -433,23 +426,9 @@ expression: "&to_value(scil).unwrap()"
                 "line": "class Thing {",
                 "context": "",
                 "contextsym": "",
-                "peekRange": "141-141"
+                "peekRange": "136-136"
               }
             ]
-          }
-        ],
-        "callees": [
-          {
-            "jump": "big_cpp.cpp#156",
-            "kind": "field",
-            "pretty": "outerNS::Thing::mDefunct",
-            "sym": "F_<T_outerNS::Thing>_mDefunct"
-          },
-          {
-            "jump": "big_cpp.cpp#155",
-            "kind": "field",
-            "pretty": "outerNS::Thing::mHP",
-            "sym": "F_<T_outerNS::Thing>_mHP"
           }
         ],
         "meta": {
@@ -461,6 +440,7 @@ expression: "&to_value(scil).unwrap()"
           "subsystem": "Core/Big",
           "implKind": "",
           "sizeBytes": 16,
+          "alignmentBytes": 8,
           "ownVFPtrBytes": 8,
           "bindingSlots": [],
           "ontologySlots": [],
@@ -544,6 +524,7 @@ expression: "&to_value(scil).unwrap()"
           ],
           "fields": [
             {
+              "lineRange": "#142",
               "pretty": "outerNS::Thing::mHP",
               "sym": "F_<T_outerNS::Thing>_mHP",
               "type": "int",
@@ -553,6 +534,7 @@ expression: "&to_value(scil).unwrap()"
               "sizeBytes": 4
             },
             {
+              "lineRange": "#146",
               "pretty": "outerNS::Thing::mDefunct",
               "sym": "F_<T_outerNS::Thing>_mDefunct",
               "type": "_Bool",
@@ -591,7 +573,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 194,
+                "lno": 183,
                 "bounds": [
                   25,
                   30
@@ -601,17 +583,17 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "T_outerNS::Superhero"
               },
               {
-                "lno": 198,
+                "lno": 185,
                 "bounds": [
-                  2,
-                  7
+                  14,
+                  19
                 ],
-                "line": ": Human() {",
+                "line": "Superhero() : Human() {}",
                 "context": "outerNS::Superhero::Superhero",
                 "contextsym": "_ZN7outerNS9SuperheroC1Ev"
               },
               {
-                "lno": 219,
+                "lno": 202,
                 "bounds": [
                   0,
                   5
@@ -621,7 +603,7 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "_ZN7outerNS5CouchC1Ei"
               },
               {
-                "lno": 220,
+                "lno": 203,
                 "bounds": [
                   16,
                   21
@@ -631,7 +613,7 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "_ZN7outerNS5CouchC1Ei"
               },
               {
-                "lno": 244,
+                "lno": 227,
                 "bounds": [
                   16,
                   21
@@ -641,12 +623,12 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "T_outerNS::OuterCat"
               },
               {
-                "lno": 360,
+                "lno": 339,
                 "bounds": [
                   10,
                   15
                 ],
-                "line": "void meet(Human &human) {",
+                "line": "void meet(Human& human) { human.ignore(); }",
                 "context": "outerNS::OuterCat::meet",
                 "contextsym": "_ZN7outerNS8OuterCat4meetERNS_5HumanE"
               }
@@ -659,22 +641,22 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 185,
+                "lno": 178,
                 "bounds": [
                   6,
                   11
                 ],
-                "line": "class Human: public Thing {",
+                "line": "class Human : public Thing {",
                 "context": "",
                 "contextsym": "",
-                "peekRange": "185-185"
+                "peekRange": "178-178"
               }
             ]
           }
         ],
         "callees": [
           {
-            "jump": "big_cpp.cpp#185",
+            "jump": "big_cpp.cpp#178",
             "kind": "class",
             "pretty": "outerNS::Thing",
             "sym": "T_outerNS::Thing"
@@ -701,6 +683,7 @@ expression: "&to_value(scil).unwrap()"
           "subsystem": "Core/Big",
           "implKind": "",
           "sizeBytes": 16,
+          "alignmentBytes": 8,
           "ownVFPtrBytes": null,
           "bindingSlots": [],
           "ontologySlots": [],
@@ -796,22 +779,22 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 245,
+                "lno": 228,
                 "bounds": [
                   0,
                   5
                 ],
-                "line": "Couch *mFavoriteCouch;",
+                "line": "Couch* mFavoriteCouch;",
                 "context": "outerNS::OuterCat",
                 "contextsym": "T_outerNS::OuterCat"
               },
               {
-                "lno": 371,
+                "lno": 348,
                 "bounds": [
                   10,
                   15
                 ],
-                "line": "void meet(Couch &couch) {",
+                "line": "void meet(Couch& couch) {",
                 "context": "outerNS::OuterCat::meet",
                 "contextsym": "_ZN7outerNS8OuterCat4meetERNS_5CouchE"
               }
@@ -824,7 +807,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 211,
+                "lno": 196,
                 "bounds": [
                   6,
                   11
@@ -832,14 +815,14 @@ expression: "&to_value(scil).unwrap()"
                 "line": "class Couch : public Thing {",
                 "context": "",
                 "contextsym": "",
-                "peekRange": "211-211"
+                "peekRange": "196-196"
               }
             ]
           }
         ],
         "callees": [
           {
-            "jump": "big_cpp.cpp#211",
+            "jump": "big_cpp.cpp#196",
             "kind": "class",
             "pretty": "outerNS::Thing",
             "sym": "T_outerNS::Thing"
@@ -866,6 +849,7 @@ expression: "&to_value(scil).unwrap()"
           "subsystem": "Core/Big",
           "implKind": "",
           "sizeBytes": 16,
+          "alignmentBytes": 8,
           "ownVFPtrBytes": null,
           "bindingSlots": [],
           "ontologySlots": [],
@@ -938,7 +922,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 447,
+                "lno": 421,
                 "bounds": [
                   28,
                   39
@@ -948,12 +932,12 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "T_outerNS::PracticalArt"
               },
               {
-                "lno": 450,
+                "lno": 423,
                 "bounds": [
-                  2,
-                  13
+                  17,
+                  28
                 ],
-                "line": ": AbstractArt() {}",
+                "line": "PracticalArt() : AbstractArt() {}",
                 "context": "outerNS::PracticalArt::PracticalArt",
                 "contextsym": "_ZN7outerNS12PracticalArtC1Ev"
               }
@@ -966,7 +950,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 437,
+                "lno": 412,
                 "bounds": [
                   6,
                   17
@@ -974,14 +958,14 @@ expression: "&to_value(scil).unwrap()"
                 "line": "class AbstractArt : public Thing {",
                 "context": "",
                 "contextsym": "",
-                "peekRange": "437-437"
+                "peekRange": "412-412"
               }
             ]
           }
         ],
         "callees": [
           {
-            "jump": "big_cpp.cpp#437",
+            "jump": "big_cpp.cpp#412",
             "kind": "class",
             "pretty": "outerNS::Thing",
             "sym": "T_outerNS::Thing"
@@ -996,6 +980,7 @@ expression: "&to_value(scil).unwrap()"
           "subsystem": "Core/Big",
           "implKind": "",
           "sizeBytes": 16,
+          "alignmentBytes": 8,
           "ownVFPtrBytes": null,
           "bindingSlots": [],
           "ontologySlots": [],
@@ -1101,7 +1086,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 216,
+                "lno": 199,
                 "bounds": [
                   0,
                   9
@@ -1111,7 +1096,7 @@ expression: "&to_value(scil).unwrap()"
                 "contextsym": "_ZN7outerNS5CouchC1Ei"
               },
               {
-                "lno": 217,
+                "lno": 200,
                 "bounds": [
                   16,
                   25
@@ -1129,7 +1114,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 194,
+                "lno": 183,
                 "bounds": [
                   6,
                   15
@@ -1137,14 +1122,14 @@ expression: "&to_value(scil).unwrap()"
                 "line": "class Superhero : public Human {",
                 "context": "",
                 "contextsym": "",
-                "peekRange": "194-194"
+                "peekRange": "183-183"
               }
             ]
           }
         ],
         "callees": [
           {
-            "jump": "big_cpp.cpp#194",
+            "jump": "big_cpp.cpp#183",
             "kind": "class",
             "pretty": "outerNS::Human",
             "sym": "T_outerNS::Human"
@@ -1159,6 +1144,7 @@ expression: "&to_value(scil).unwrap()"
           "subsystem": "Core/Big",
           "implKind": "",
           "sizeBytes": 16,
+          "alignmentBytes": 8,
           "ownVFPtrBytes": null,
           "bindingSlots": [],
           "ontologySlots": [],
@@ -1261,22 +1247,22 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 460,
+                "lno": 433,
                 "bounds": [
                   0,
                   12
                 ],
-                "line": "PracticalArt &mHeldArt;",
+                "line": "PracticalArt& mHeldArt;",
                 "context": "outerNS::StackArtHolder",
                 "contextsym": "T_outerNS::StackArtHolder"
               },
               {
-                "lno": 463,
+                "lno": 436,
                 "bounds": [
                   15,
                   27
                 ],
-                "line": "StackArtHolder(PracticalArt &aArt) : mHeldArt(aArt) {}",
+                "line": "StackArtHolder(PracticalArt& aArt) : mHeldArt(aArt) {}",
                 "context": "outerNS::StackArtHolder::StackArtHolder",
                 "contextsym": "_ZN7outerNS14StackArtHolderC1ERNS_12PracticalArtE"
               }
@@ -1289,7 +1275,7 @@ expression: "&to_value(scil).unwrap()"
             "path_kind": "Normal",
             "lines": [
               {
-                "lno": 447,
+                "lno": 421,
                 "bounds": [
                   6,
                   18
@@ -1297,14 +1283,14 @@ expression: "&to_value(scil).unwrap()"
                 "line": "class PracticalArt : public AbstractArt {",
                 "context": "",
                 "contextsym": "",
-                "peekRange": "447-447"
+                "peekRange": "421-421"
               }
             ]
           }
         ],
         "callees": [
           {
-            "jump": "big_cpp.cpp#447",
+            "jump": "big_cpp.cpp#421",
             "kind": "class",
             "pretty": "outerNS::AbstractArt",
             "sym": "T_outerNS::AbstractArt"
@@ -1331,6 +1317,7 @@ expression: "&to_value(scil).unwrap()"
           "subsystem": "Core/Big",
           "implKind": "",
           "sizeBytes": 16,
+          "alignmentBytes": 8,
           "ownVFPtrBytes": null,
           "bindingSlots": [],
           "ontologySlots": [],

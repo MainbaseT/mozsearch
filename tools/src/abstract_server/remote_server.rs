@@ -107,14 +107,18 @@ impl AbstractServer for RemoteServer {
         Err(ServerError::Unsupported)
     }
 
-    async fn fetch_raw_analysis(&self, sf_path: &str) -> Result<BoxStream<Value>> {
+    async fn fetch_raw_analysis<'a>(&self, sf_path: &str) -> Result<BoxStream<'a, Value>> {
         let url = self.raw_analysis_base_url.join(sf_path)?;
         let raw_str = get(url).await?.text().await?;
         let values: Result<Vec<Value>> = raw_str
             .lines()
-            .map(|s| from_str(s).map_err(|e| ServerError::from(e)))
+            .map(|s| from_str(s).map_err(ServerError::from))
             .collect();
         Ok(Box::pin(tokio_stream::iter(values?)))
+    }
+
+    async fn fetch_formatted_lines(&self, _sf_path: &str) -> Result<(Vec<String>, String)> {
+        Err(ServerError::Unsupported)
     }
 
     async fn fetch_raw_source(&self, _sf_path: &str) -> Result<String> {
@@ -131,11 +135,7 @@ impl AbstractServer for RemoteServer {
             return Err(ServerError::Unsupported);
         }
         // Our tree-relative paths should not start with a slash
-        let norm_path = if sf_path.starts_with('/') {
-            &sf_path[1..]
-        } else {
-            sf_path
-        };
+        let norm_path = sf_path.strip_prefix('/').unwrap_or(sf_path);
         // We don't both caring about the presence of ".." here because we don't
         // have any security-ish things to worry about for a public web server.
 

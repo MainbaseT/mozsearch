@@ -24,6 +24,8 @@ use tools::file_format::identifiers::IdentMap;
 use tools::format;
 use tools::git_ops;
 
+use tools::url_encode_path::url_decode_path;
+
 struct WebRequest<'a> {
     path: &'a str,
 }
@@ -51,7 +53,7 @@ impl WebResponse {
         WebResponse {
             content_type: "text/html".to_owned(),
             output: body,
-            .. WebResponse::default()
+            ..WebResponse::default()
         }
     }
 
@@ -59,7 +61,7 @@ impl WebResponse {
         WebResponse {
             content_type: "application/json".to_owned(),
             output: body,
-            .. WebResponse::default()
+            ..WebResponse::default()
         }
     }
 
@@ -67,7 +69,7 @@ impl WebResponse {
         WebResponse {
             status: StatusCode::InternalServerError,
             output: body,
-            .. WebResponse::default()
+            ..WebResponse::default()
         }
     }
 
@@ -75,7 +77,7 @@ impl WebResponse {
         WebResponse {
             status: StatusCode::NotFound,
             output: "Not found".to_owned(),
-            .. WebResponse::default()
+            ..WebResponse::default()
         }
     }
 
@@ -83,7 +85,7 @@ impl WebResponse {
         WebResponse {
             status: StatusCode::MovedPermanently,
             redirect_location: Some(url),
-            .. WebResponse::default()
+            ..WebResponse::default()
         }
     }
 }
@@ -120,7 +122,7 @@ fn handle_static(path: String, content_type: Option<&str>) -> WebResponse {
     WebResponse {
         content_type: content_type.to_owned(),
         output: input,
-        .. WebResponse::default()
+        ..WebResponse::default()
     }
 }
 
@@ -129,11 +131,11 @@ fn handle(
     ident_map: &HashMap<String, IdentMap>,
     req: WebRequest,
 ) -> WebResponse {
-    let path = req.path.to_owned();
+    let path = url_decode_path(req.path);
     let path = path[1..].split('/').collect::<Vec<_>>();
 
-    if path.len() > 0 && path[0] == "static" {
-        let path = cfg.mozsearch_path.clone() + &req.path;
+    if !path.is_empty() && path[0] == "static" {
+        let path = cfg.mozsearch_path.clone() + req.path;
         return handle_static(path, None);
     }
 
@@ -157,7 +159,7 @@ fn handle(
             let path = path.join("/");
 
             let mut writer = Vec::new();
-            match format::format_path(cfg, &tree_name, &rev, &path, &mut writer) {
+            match format::format_path(cfg, tree_name, rev, &path, &mut writer) {
                 Ok(()) => WebResponse::html(String::from_utf8(writer).unwrap()),
                 Err(err) => WebResponse::internal_error(err.to_owned()),
             }
@@ -175,16 +177,15 @@ fn handle(
                 .arg("cinnabar")
                 .arg("hg2git")
                 .arg(hg_rev)
-                .current_dir(&git_path)
+                .current_dir(git_path)
                 .output();
             match output_result {
-                Ok(output) if output.status.success() => {
-                    WebResponse::redirect(format!("/{}/rev/{}/{}",
-                        tree_name,
-                        git_ops::decode_bytes(output.stdout).trim(),
-                        path[3..].join("/"))
-                    )
-                }
+                Ok(output) if output.status.success() => WebResponse::redirect(format!(
+                    "/{}/rev/{}/{}",
+                    tree_name,
+                    git_ops::decode_bytes(output.stdout).trim(),
+                    path[3..].join("/")
+                )),
                 Ok(_) => WebResponse::not_found(),
                 Err(err) => WebResponse::internal_error(format!("{:?}", err)),
             }
@@ -197,7 +198,7 @@ fn handle(
             let tree_config = &cfg.trees[*tree_name];
 
             let path = format!("{}/file/{}", tree_config.paths.index_path, path);
-            return handle_static(path, Some("text/html"));
+            handle_static(path, Some("text/html"))
         }
 
         "diff" => {
@@ -210,7 +211,7 @@ fn handle(
             let path = path.join("/");
 
             let mut writer = Vec::new();
-            match format::format_diff(cfg, &tree_name, &rev, &path, &mut writer) {
+            match format::format_diff(cfg, tree_name, rev, &path, &mut writer) {
                 Ok(()) => WebResponse::html(String::from_utf8(writer).unwrap()),
                 Err(err) => WebResponse::internal_error(err.to_owned()),
             }
@@ -224,7 +225,7 @@ fn handle(
             let rev = &path[2];
 
             let mut writer = Vec::new();
-            match format::format_commit(cfg, &tree_name, &rev, &mut writer) {
+            match format::format_commit(cfg, tree_name, rev, &mut writer) {
                 Ok(()) => WebResponse::html(String::from_utf8(writer).unwrap()),
                 Err(err) => WebResponse::internal_error(err.to_owned()),
             }
@@ -236,7 +237,7 @@ fn handle(
             }
 
             let rev = &path[2];
-            match blame::get_commit_info(&cfg, tree_name, rev) {
+            match blame::get_commit_info(cfg, tree_name, rev) {
                 Ok(json) => WebResponse::json(json),
                 Err(err) => WebResponse::internal_error(err.to_owned()),
             }
@@ -244,10 +245,10 @@ fn handle(
 
         "complete" => {
             if let Some(ids) = ident_map.get(&tree_name.to_string()) {
-                let json = ids.lookup_json(&path[2], false, false, 6);
+                let json = ids.lookup_json(path[2], false, false, 6);
                 WebResponse::json(json)
             } else {
-                return WebResponse::not_found();
+                WebResponse::not_found()
             }
         }
 
@@ -258,7 +259,7 @@ fn handle(
 fn main() {
     env_logger::init();
 
-    let cfg = config::load(&env::args().nth(1).unwrap(), true, None);
+    let cfg = config::load(&env::args().nth(1).unwrap(), true, None, None, None);
 
     let ident_map = IdentMap::load(&cfg);
 
@@ -267,7 +268,7 @@ fn main() {
     let handler = move |req: Request, mut res: Response| {
         if req.method != Method::Get {
             *res.status_mut() = StatusCode::MethodNotAllowed;
-            let resp = format!("Invalid method").into_bytes();
+            let resp = "Invalid method".to_string().into_bytes();
             if let Err(e) = res.send(&resp) {
                 eprintln!("Error when replying to {}: {:?}", req.uri, e);
             }
@@ -286,7 +287,7 @@ fn main() {
         };
         let (ref cfg, ref ident_map) = *guard;
 
-        let response = handle(&cfg, &ident_map, WebRequest { path: &path });
+        let response = handle(cfg, ident_map, WebRequest { path: &path });
 
         *res.status_mut() = response.status;
         let output = response.output.into_bytes();
@@ -307,7 +308,7 @@ fn main() {
         let mut status_out = OpenOptions::new()
             .append(true)
             .create(true)
-            .open(&env::args().nth(2).unwrap())
+            .open(env::args().nth(2).unwrap())
             .unwrap();
         writeln!(status_out, "web-server.rs loaded").unwrap();
     }
@@ -315,5 +316,7 @@ fn main() {
     println!("On 8001");
     // Use 4 threads instead of the 2 that would be automatically chosen on our
     // AWS boxes.
-    let _listening = hyper::Server::http("0.0.0.0:8001").unwrap().handle_threads(handler, 4);
+    let _listening = hyper::Server::http("0.0.0.0:8001")
+        .unwrap()
+        .handle_threads(handler, 4);
 }

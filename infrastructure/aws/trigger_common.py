@@ -79,6 +79,24 @@ class TriggerCommandBase:
         ec2 = boto3.resource('ec2')
         client = boto3.client('ec2')
 
+        # Indexers that want more powerful instance:
+        # - release4 (bug 1922407); runtimes have hit and timed out at 12 hours
+        #   using an m5d.2xlarge
+        # - release5 (bug 1912078 ish): runtime hit 8.5 hours and much of this
+        #   is simply build duration for webkit, so should parallelize easily.
+        #   This also gives us a ton of SSD-backed swap as a release valve.
+        #
+        # This decision is baked into the script here rather than present in
+        # config files because we run this script as part of a lambda job run
+        # out of a zipball we upload to AWS without doing any git checkouts,
+        # etc.  The git stuff happens on the indexer after it is spawned.  (This
+        # could of course be changed, but potentially would make the lambda jobs
+        # more complex / brittle.)
+        if args.channel == "release4" or args.channel == "release5":
+            instance_type = 'm5d.4xlarge'
+        else:
+            instance_type = 'm5d.2xlarge'
+
         # Terminate any "running" or "stopped" instances.  We used to only
         # terminate "running" instances with the theory that someone might get
         # around to investigating the "stopped" instance, but the reality is
@@ -101,7 +119,7 @@ class TriggerCommandBase:
 
     cd ~ubuntu
     {extra_commands}
-    sudo -i -u ubuntu {cmd_env_vars} ./update.sh "{branch}" "{mozsearch_repo}" "{config_repo}"
+    sudo -i -u ubuntu {cmd_env_vars} ./update.sh "{mozsearch_repo}" "{branch}" "{config_repo}" "{branch}"
     sudo -i -u ubuntu {cmd_env_vars} mozsearch/infrastructure/aws/main.sh {core_script} {max_runtime_hours} "{branch}" "{channel}" {extra_args}
     '''.format(
         core_script=self.core_script,
@@ -129,7 +147,7 @@ class TriggerCommandBase:
             'KeyName': 'Main Key Pair',
             'SecurityGroups': ['indexer-secure'],
             'UserData': user_data,
-            'InstanceType': 'm5d.2xlarge',
+            'InstanceType': instance_type,
             'BlockDeviceMappings': block_devices,
             'IamInstanceProfile': {
                 'Name': 'indexer-role',
@@ -163,4 +181,3 @@ class TriggerCommandBase:
             print(repr(launch_spec))
 
         return client.run_instances(MinCount=1, MaxCount=1, **launch_spec)
-

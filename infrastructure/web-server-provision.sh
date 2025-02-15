@@ -4,6 +4,11 @@ set -x # Show commands
 set -eu # Errors/undefined vars are fatal
 set -o pipefail # Check all commands in a pipeline
 
+MOZSEARCH_REPO="${MOZSEARCH_REPO:-https://github.com/mozsearch/mozsearch}"
+MOZSEARCH_BRANCH="${MOZSEARCH_BRANCH:-master}"
+MOZSEARCH_CONFIG_REPO="${MOZSEARCH_CONFIG_REPO:-https://github.com/mozsearch/mozsearch-mozilla}"
+MOZSEARCH_CONFIG_BRANCH="${MOZSEARCH_CONFIG_BRANCH:-master}"
+
 # Nginx
 sudo apt-get install -y nginx
 
@@ -15,7 +20,7 @@ set -x # Show commands
 set -eu # Errors/undefined vars are fatal
 set -o pipefail # Check all commands in a pipeline
 
-exec &> update-log
+exec > >(tee -a update-log) 2>&1
 
 date
 
@@ -37,19 +42,19 @@ echo Config repository is $CONFIG_REPO rev $CONFIG_REV
 # Note: This seems needlessly wasteful but I'm not going to change this while
 # changing other things.
 rm -rf mozsearch
-git clone $MOZSEARCH_REPO mozsearch
+mkdir mozsearch
 pushd mozsearch
-git checkout $MOZSEARCH_REV
+git init
+git remote add origin "$MOZSEARCH_REPO"
+git fetch origin "$MOZSEARCH_REV"
+git switch --detach FETCH_HEAD
 git submodule init
 git submodule update
 popd
 
 # Install files from the config repo.
 rm -rf config
-git clone $CONFIG_REPO config
-pushd config
-git checkout $CONFIG_REV
-popd
+git clone -b $CONFIG_REV $CONFIG_REPO config --depth=1
 
 date
 
@@ -70,10 +75,10 @@ chmod +x update.sh
 # this really is just:
 # - Validating the image can compile and use rust and clang correctly.
 # - Caching some crates in `~/.cargo`.
-./update.sh https://github.com/mozsearch/mozsearch master https://github.com/mozsearch/mozsearch-mozilla master
+./update.sh "$MOZSEARCH_REPO" "$MOZSEARCH_BRANCH" "$MOZSEARCH_CONFIG_REPO" "$MOZSEARCH_CONFIG_BRANCH"
 mv update-log provision-update-log-1
 
 # Run this a second time to make sure the script is actually idempotent, so we
 # don't have any surprises when the update script gets run when the VM spins up.
-./update.sh https://github.com/mozsearch/mozsearch master https://github.com/mozsearch/mozsearch-mozilla master
+./update.sh "$MOZSEARCH_REPO" "$MOZSEARCH_BRANCH" "$MOZSEARCH_CONFIG_REPO" "$MOZSEARCH_CONFIG_BRANCH"
 mv update-log provision-update-log-2

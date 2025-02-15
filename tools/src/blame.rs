@@ -1,8 +1,8 @@
 use crate::file_format::config::Config;
 use crate::links;
 
+use serde_json::{json, to_string, Map};
 use std::borrow::Cow;
-use serde_json::{json, Map, to_string};
 
 use chrono::datetime::DateTime;
 use chrono::naive::datetime::NaiveDateTime;
@@ -21,18 +21,14 @@ pub fn commit_header(commit: &git2::Commit) -> Result<(String, String), &'static
     Ok((header, entity_replace(&remainder)))
 }
 
-pub fn get_commit_info(
-    cfg: &Config,
-    tree_name: &str,
-    revs: &str,
-) -> Result<String, &'static str> {
+pub fn get_commit_info(cfg: &Config, tree_name: &str, revs: &str) -> Result<String, &'static str> {
     let tree_config = cfg.trees.get(tree_name).ok_or("Invalid tree")?;
     let git = tree_config.get_git()?;
     let mut infos = vec![];
     for rev in revs.split(',') {
         let commit_obj = git.repo.revparse_single(rev).map_err(|_| "Bad revision")?;
         let commit = commit_obj.as_commit().ok_or("Bad revision")?;
-        let (msg, _) = commit_header(&commit)?;
+        let (msg, _) = commit_header(commit)?;
 
         let naive_t = NaiveDateTime::from_timestamp(commit.time().seconds(), 0);
         let tz = FixedOffset::east(commit.time().offset_minutes() * 60);
@@ -57,14 +53,13 @@ pub fn get_commit_info(
 
         obj.insert("date".to_owned(), json!(t));
 
-        match (&tree_config.paths.hg_root, git.hg_map.get(&commit_obj.id())) {
-            (Some(hg_path), Some(hg_id)) => {
-                obj.insert(
-                    "fulldiff".to_owned(),
-                    json!(format!("{}/rev/{}", hg_path, hg_id)),
-                );
-            }
-            _ => (),
+        if let (Some(hg_path), Some(hg_id)) =
+            (&tree_config.paths.hg_root, git.hg_map.get(&commit_obj.id()))
+        {
+            obj.insert(
+                "fulldiff".to_owned(),
+                json!(format!("{}/rev/{}", hg_path, hg_id)),
+            );
         };
 
         infos.push(json!(obj));

@@ -17,6 +17,7 @@ expression: sgc.to_json()
         "parentsym": "T_outerNS::Thing",
         "implKind": "",
         "sizeBytes": null,
+        "alignmentBytes": null,
         "ownVFPtrBytes": null,
         "bindingSlots": [],
         "ontologySlots": [],
@@ -41,7 +42,7 @@ expression: sgc.to_json()
         ]
       },
       "jumps": {
-        "def": "big_cpp.cpp#162"
+        "def": "big_cpp.cpp#155"
       }
     },
     "_ZN7outerNS8OuterCat4meetERNS_5CouchE": {
@@ -57,6 +58,7 @@ expression: sgc.to_json()
         "parentsym": "T_outerNS::OuterCat",
         "implKind": "",
         "sizeBytes": null,
+        "alignmentBytes": null,
         "ownVFPtrBytes": null,
         "bindingSlots": [],
         "ontologySlots": [],
@@ -78,7 +80,7 @@ expression: sgc.to_json()
         ]
       },
       "jumps": {
-        "def": "big_cpp.cpp#371"
+        "def": "big_cpp.cpp#348"
       }
     },
     "_ZN7outerNS8OuterCat5shredERNS_5ThingE": {
@@ -94,6 +96,7 @@ expression: sgc.to_json()
         "parentsym": "T_outerNS::OuterCat",
         "implKind": "",
         "sizeBytes": null,
+        "alignmentBytes": null,
         "ownVFPtrBytes": null,
         "bindingSlots": [],
         "ontologySlots": [],
@@ -115,7 +118,7 @@ expression: sgc.to_json()
         ]
       },
       "jumps": {
-        "def": "big_cpp.cpp#410"
+        "def": "big_cpp.cpp#387"
       }
     },
     "_ZN7outerNS8OuterCat7destroyERNS_5ThingE": {
@@ -131,6 +134,7 @@ expression: sgc.to_json()
         "parentsym": "T_outerNS::OuterCat",
         "implKind": "",
         "sizeBytes": null,
+        "alignmentBytes": null,
         "ownVFPtrBytes": null,
         "bindingSlots": [],
         "ontologySlots": [],
@@ -152,7 +156,7 @@ expression: sgc.to_json()
         ]
       },
       "jumps": {
-        "def": "big_cpp.cpp#417"
+        "def": "big_cpp.cpp#392"
       }
     }
   },

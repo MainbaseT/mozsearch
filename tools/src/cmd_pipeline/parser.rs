@@ -22,6 +22,7 @@ use super::cmd_search_text::SearchText;
 use super::cmd_show_html::ShowHtml;
 use super::cmd_tokenize_source::TokenizeSource;
 use super::cmd_traverse::Traverse;
+use super::cmd_webtest::Webtest;
 
 #[derive(Clone, Debug, PartialEq, ValueEnum)]
 pub enum OutputFormat {
@@ -52,13 +53,7 @@ pub struct ToolOpts {
     )]
     pub tree: String,
 
-    #[clap(
-        long,
-        short,
-        value_parser,
-        value_enum,
-        default_value = "concise"
-    )]
+    #[clap(long, short, value_parser, value_enum, default_value = "concise")]
     pub output_format: OutputFormat,
 
     #[clap(subcommand)]
@@ -87,6 +82,7 @@ pub enum Command {
     ShowHtml(ShowHtml),
     TokenizeSource(TokenizeSource),
     Traverse(Traverse),
+    Webtest(Webtest),
 }
 
 #[derive(Debug, Parser)]

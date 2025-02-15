@@ -6,7 +6,7 @@ use clap::{Args, ValueEnum};
 use dot_generator::*;
 use dot_structures::*;
 use regex::{Captures, Regex};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use graphviz_rust::cmd::{CommandArg, Format, Layout};
 use graphviz_rust::exec;
@@ -27,7 +27,9 @@ pub enum GraphFormat {
     Json,
     // Raw dot syntax without any layout performed.
     RawDot,
+    #[allow(clippy::upper_case_acronyms)]
     SVG,
+    #[allow(clippy::upper_case_acronyms)]
     PNG,
     // Dot with layout information.
     Dot,
@@ -242,7 +244,7 @@ fn transform_svg(svg: &str) -> String {
 impl PipelineCommand for GraphCommand {
     async fn execute(
         &self,
-        server: &Box<dyn AbstractServer + Send + Sync>,
+        server: &(dyn AbstractServer + Send + Sync),
         input: PipelineValues,
     ) -> Result<PipelineValues> {
         let mut graphs = match input {

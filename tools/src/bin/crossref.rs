@@ -22,14 +22,14 @@ use tools::file_format::analysis::OntologySlotKind;
 use tools::file_format::analysis::StructuredPointerInfo;
 use tools::file_format::analysis::StructuredTag;
 use tools::file_format::analysis::{
-    read_analysis, read_structured, read_target, AnalysisKind, SearchResult,
-    StructuredBindingSlotInfo, AnalysisTarget, Location, BindingSlotProps,
-    TargetTag, LineRange,
+    read_analysis, read_structured, read_target, AnalysisKind, AnalysisTarget, BindingSlotProps,
+    LineRange, Location, SearchResult, StructuredBindingSlotInfo, TargetTag,
 };
 use tools::file_format::analysis_manglings::make_file_sym_from_path;
 use tools::file_format::analysis_manglings::split_pretty;
 use tools::file_format::config;
 use tools::file_format::crossref_converter::convert_crossref_value_to_sym_info_rep;
+use tools::file_format::ontology_mapping::OntologyRunnableMode;
 use tools::file_format::ontology_mapping::{
     OntologyLabelOwningClass, OntologyMappingIngestion, OntologyPointerKind,
 };
@@ -81,12 +81,18 @@ type XrefLinkSubclass = Vec<(Ustr, Ustr)>;
 type XrefLinkOverride = Vec<(Ustr, Ustr)>;
 type XrefLinkSlots = BTreeMap<(Ustr, Ustr), (BindingSlotProps, Option<Ustr>)>;
 
+#[allow(clippy::too_many_arguments)]
 fn process_analysis_target(
     mut piece: AnalysisTarget,
-    path: &Ustr, file_sym: &Ustr, lineno: usize, loc: &Location,
-    table: &mut SearchResultTable, pretty_table: &mut PrettyTable,
-    id_table: &mut IdTable, callees_table: &mut CalleesTable,
-    lines: &Vec<(String, u32)>
+    path: &Ustr,
+    file_sym: &Ustr,
+    lineno: usize,
+    loc: &Location,
+    table: &mut SearchResultTable,
+    pretty_table: &mut PrettyTable,
+    id_table: &mut IdTable,
+    callees_table: &mut CalleesTable,
+    lines: &[(String, u32)],
 ) {
     if piece.pretty.is_empty() {
         info!("Skipping empty pretty for symbol {}", piece.sym);
@@ -96,13 +102,13 @@ fn process_analysis_target(
     // XXX temporary include hack; we should fix this in the C++ indexer, but I want to
     // see how it works out.
     if piece.sym.starts_with("FILE_") && piece.contextsym.is_empty() {
-        piece.context = path.clone();
-        piece.contextsym = file_sym.clone();
+        piece.context = *path;
+        piece.contextsym = *file_sym;
     }
 
-    let t1 = table.entry(piece.sym).or_insert_with(|| BTreeMap::new());
-    let t2 = t1.entry(piece.kind).or_insert_with(|| BTreeMap::new());
-    let t3 = t2.entry(path.clone()).or_insert_with(|| Vec::new());
+    let t1 = table.entry(piece.sym).or_default();
+    let t2 = t1.entry(piece.kind).or_default();
+    let t3 = t2.entry(*path).or_default();
 
     let (line, offset) = lines[lineno].clone();
 
@@ -114,12 +120,10 @@ fn process_analysis_target(
     // to be the symbol in question; it's not useful to name the context symbol
     // redundantly when it's the symbol we're attaching data to.
     if piece.kind == AnalysisKind::Use && !piece.contextsym.is_empty() {
-        let callee_syms = callees_table
-            .entry(piece.contextsym)
-            .or_insert_with(|| BTreeMap::new());
+        let callee_syms = callees_table.entry(piece.contextsym).or_default();
         let (from_path, callee_jump_lines) = callee_syms
             .entry(piece.sym)
-            .or_insert_with(|| (path.clone(), BTreeSet::new()));
+            .or_insert_with(|| (*path, BTreeSet::new()));
         if from_path == path {
             callee_jump_lines.insert(loc.lineno);
         }
@@ -139,8 +143,8 @@ fn process_analysis_target(
     // Idempotently insert the pretty identifier -> symbol mapping as long as the pretty
     // symbol looks sane.  (Whitespace breaks the `identifiers` file's text format, so
     // we can't include them.)
-    let ch = piece.sym.chars().nth(0).unwrap();
-    if !(ch >= '0' && ch <= '9') && !piece.sym.contains(' ') {
+    let ch = piece.sym.chars().next().unwrap();
+    if !ch.is_ascii_digit() && !piece.sym.contains(' ') {
         // Split the pretty identifier into parts so for "foo::bar::Baz"
         // we can emit ["foo::bar::Baz", "bar::Baz", "Baz"] into our
         // identifiers table so people don't have to always type out
@@ -153,13 +157,13 @@ fn process_analysis_target(
         // something to be said for normalizing on use of "::" for
         // everything but paths, and we sorta do this for scip-indexer
         // already.)
-        let (components, delim) = split_pretty(&piece.pretty.as_str(), "");
+        let (components, delim) = split_pretty(piece.pretty.as_str(), "");
         for i in 0..components.len() {
             let sub = &components[i..components.len()];
             let sub = sub.join(delim);
 
             if !sub.is_empty() {
-                let t1 = id_table.entry(ustr(&sub)).or_insert(UstrSet::default());
+                let t1 = id_table.entry(ustr(&sub)).or_default();
                 t1.insert(piece.sym);
             }
         }
@@ -167,7 +171,8 @@ fn process_analysis_target(
 }
 
 fn process_analysis_structured(
-    mut piece: AnalysisStructured, subsystem: Option<Ustr>,
+    mut piece: AnalysisStructured,
+    subsystem: Option<Ustr>,
     meta_table: &mut MetaTable,
     xref_link_subclass: &mut XrefLinkSubclass,
     xref_link_override: &mut XrefLinkOverride,
@@ -185,32 +190,36 @@ fn process_analysis_structured(
         // We remove all bindings infos from AnalysisStructured instances here
         // but add them back both ways when we iterate over xref_link_slots.
         for slot_info in piece.binding_slots.drain(..) {
-            xref_link_slots.insert((piece.sym, slot_info.sym), (slot_info.props, subsystem.clone()));
+            xref_link_slots.insert((piece.sym, slot_info.sym), (slot_info.props, subsystem));
         }
         if let Some(slot_info) = piece.slot_owner.take() {
-            xref_link_slots.insert((slot_info.sym, piece.sym), (slot_info.props, subsystem.clone()));
+            xref_link_slots.insert((slot_info.sym, piece.sym), (slot_info.props, subsystem));
         }
 
-        piece.subsystem = subsystem.clone();
+        piece.subsystem = subsystem;
 
         piece
     });
 }
 
-fn make_subsystem(path: &Ustr, file_sym: &Ustr,
-                  ingestion: &mut RepoIngestion,
-                  meta_table: &mut MetaTable, pretty_table: &mut PrettyTable,
-                  id_table: &mut IdTable) -> Option<Ustr> {
+fn make_subsystem(
+    path: &Ustr,
+    file_sym: &Ustr,
+    ingestion: &mut RepoIngestion,
+    meta_table: &mut MetaTable,
+    pretty_table: &mut PrettyTable,
+    id_table: &mut IdTable,
+) -> Option<Ustr> {
     let concise_info = ingestion.state.concise_per_file.get(path);
 
     if let Some(concise) = concise_info {
         let file_structured = AnalysisStructured {
             structured: StructuredTag::Structured,
-            pretty: path.clone(),
-            sym: file_sym.clone(),
+            pretty: *path,
+            sym: *file_sym,
             type_pretty: None,
             kind: ustr("file"),
-            subsystem: concise.subsystem.clone(),
+            subsystem: concise.subsystem,
             // For most analytical purposes, we want to think of files as atomic,
             // so I don't think there is any upside to modeling the containing
             // directory as a parent.  Especially since we don't yet have a
@@ -219,6 +228,7 @@ fn make_subsystem(path: &Ustr, file_sym: &Ustr,
             slot_owner: None,
             impl_kind: ustr("impl"),
             size_bytes: None,
+            alignment_bytes: None,
             own_vf_ptr_bytes: None,
             binding_slots: vec![],
             ontology_slots: vec![],
@@ -235,13 +245,11 @@ fn make_subsystem(path: &Ustr, file_sym: &Ustr,
             variants: vec![],
             extra: Map::default(),
         };
-        meta_table.insert(file_structured.sym.clone(), file_structured);
-        pretty_table.insert(file_sym.clone(), path.clone());
-        let t1 = id_table
-            .entry(path.clone())
-            .or_insert_with(|| UstrSet::default());
-        t1.insert(file_sym.clone());
-        concise.subsystem.clone()
+        meta_table.insert(file_structured.sym, file_structured);
+        pretty_table.insert(*file_sym, *path);
+        let t1 = id_table.entry(*path).or_default();
+        t1.insert(*file_sym);
+        concise.subsystem
     } else {
         None
     }
@@ -292,7 +300,7 @@ async fn main() {
     let cli = CrossrefCli::parse();
 
     let tree_name = &cli.tree_name;
-    let cfg = config::load(&cli.config_file, false, Some(&tree_name));
+    let cfg = config::load(&cli.config_file, false, Some(tree_name), None, None);
 
     let tree_config = cfg.trees.get(tree_name).unwrap();
 
@@ -309,14 +317,14 @@ async fn main() {
     let all_files_paths: Vec<Ustr> = fs::read_to_string(all_files_list_path)
         .unwrap()
         .lines()
-        .map(|x| ustr(&x))
+        .map(ustr)
         .collect();
 
     let all_dirs_list_path = format!("{}/all-dirs", tree_config.paths.index_path);
     let all_dirs_paths: Vec<Ustr> = fs::read_to_string(all_dirs_list_path)
         .unwrap()
         .lines()
-        .map(|x| ustr(&x))
+        .map(ustr)
         .collect();
 
     // ## Ingest Repo-Wide Information
@@ -464,10 +472,54 @@ async fn main() {
     let mut xref_link_slots = XrefLinkSlots::new();
 
     for path in &analysis_relative_paths {
-        print!("File {}\n", path);
+        println!("File {}", path);
 
         let analysis_fname = format!("{}/analysis/{}", tree_config.paths.index_path, path);
-        let analysis = read_analysis(&analysis_fname, &mut read_target);
+        let file_sym: Ustr = ustr(&make_file_sym_from_path(path));
+
+        let subsystem = make_subsystem(
+            path,
+            &file_sym,
+            &mut ingestion,
+            &mut meta_table,
+            &mut pretty_table,
+            &mut id_table,
+        );
+
+        // We process the structured records before checking for the source file
+        // to allow us to ingest the structured records from SCIP indexing that
+        // do not actually correspond to a source file.  This is the case for
+        // Java imports from the JDK/Kotlin/Android runtimes.
+        let structured_analysis = read_analysis(&analysis_fname, &mut read_structured);
+        for datum in structured_analysis {
+            for piece in datum.data {
+                // If we don't have a location for the structured record then this
+                // is the SCIP external structured record case mentioned above and
+                // we need to insert the pretty and id_table mappings since there
+                // won't be a target record for the definition.
+                if datum.loc.lineno == 0 {
+                    pretty_table.insert(piece.sym, piece.pretty);
+                    // TODO: extract out the logic from process_analysis_target so
+                    // we can generate all the suffix variations here.  But for our
+                    // current needs, just the exact pretty identifier is sufficient.
+                    // (The ontology rule is always on the fully qualified pretty.)
+                    let id_syms = id_table.entry(piece.pretty).or_insert(UstrSet::default());
+                    id_syms.insert(piece.sym);
+                    // We also need to make sure there's a top-level entry in
+                    // the table, even if it's empty, so that when we're
+                    // building the crossref, the structured record gets emitted.
+                    table.entry(piece.sym).or_default();
+                }
+                process_analysis_structured(
+                    piece,
+                    subsystem,
+                    &mut meta_table,
+                    &mut xref_link_subclass,
+                    &mut xref_link_override,
+                    &mut xref_link_slots,
+                );
+            }
+        }
 
         // Load the source file and chop it up into `lines` so that we extract
         // the `line` for each result.  In the future this could move to
@@ -495,36 +547,30 @@ async fn main() {
             })
             .collect();
 
-        let file_sym = ustr(&make_file_sym_from_path(path));
+        let analysis = read_analysis(&analysis_fname, &mut read_target);
 
         for datum in analysis {
             // If we're going to experience a bad line, skip out before
             // creating any structure.
             let lineno = (datum.loc.lineno - 1) as usize;
             if lineno >= lines.len() {
-                print!("Bad line number in file {} (line {})\n", path, lineno);
+                println!("Bad line number in file {} (line {})", path, lineno);
                 continue;
             }
 
             for piece in datum.data {
                 process_analysis_target(
-                    piece, &path, &file_sym, lineno, &datum.loc,
-                    &mut table, &mut pretty_table, &mut id_table,
-                    &mut callees_table, &lines);
-            }
-        }
-
-        let subsystem = make_subsystem(
-            &path, &file_sym,
-            &mut ingestion, &mut meta_table, &mut pretty_table, &mut id_table);
-
-        let structured_analysis = read_analysis(&analysis_fname, &mut read_structured);
-        for datum in structured_analysis {
-            for piece in datum.data {
-                process_analysis_structured(
-                    piece, subsystem,
-                    &mut meta_table, &mut xref_link_subclass,
-                    &mut xref_link_override, &mut xref_link_slots);
+                    piece,
+                    path,
+                    &file_sym,
+                    lineno,
+                    &datum.loc,
+                    &mut table,
+                    &mut pretty_table,
+                    &mut id_table,
+                    &mut callees_table,
+                    &lines,
+                );
             }
         }
     }
@@ -538,7 +584,7 @@ async fn main() {
             .collect();
 
     for path in &other_resources_relative_paths {
-        print!("File {}\n", path);
+        println!("File {}", path);
 
         let pretty = ustr(format!("file {}", path).as_str());
         let file_sym = ustr(&make_file_sym_from_path(path));
@@ -557,7 +603,7 @@ async fn main() {
             let mut line: String = String::default();
             match reader.read_line(&mut line) {
                 Ok(_) => line_to_buf_and_offset(line),
-                Err(_) => ("(binary file)".to_string(), 0 as u32),
+                Err(_) => ("(binary file)".to_string(), 0_u32),
             }
         };
         let lines = vec![line_and_offset];
@@ -570,7 +616,7 @@ async fn main() {
         let piece = AnalysisTarget {
             target: TargetTag::Target,
             kind: AnalysisKind::Def,
-            pretty: pretty,
+            pretty,
             sym: file_sym,
             context: ustr(""),
             contextsym: ustr(""),
@@ -582,13 +628,26 @@ async fn main() {
         };
 
         process_analysis_target(
-            piece, &path, &file_sym, 0, &loc,
-            &mut table, &mut pretty_table, &mut id_table,
-            &mut callees_table, &lines);
+            piece,
+            path,
+            &file_sym,
+            0,
+            &loc,
+            &mut table,
+            &mut pretty_table,
+            &mut id_table,
+            &mut callees_table,
+            &lines,
+        );
 
         let _ = make_subsystem(
-            &path, &file_sym,
-            &mut ingestion, &mut meta_table, &mut pretty_table, &mut id_table);
+            path,
+            &file_sym,
+            &mut ingestion,
+            &mut meta_table,
+            &mut pretty_table,
+            &mut id_table,
+        );
     }
 
     // ## Process deferred meta cross-referencing
@@ -611,7 +670,7 @@ async fn main() {
                 props,
             });
             if owner.subsystem.is_none() {
-                owner.subsystem = subsystem.clone();
+                owner.subsystem = subsystem;
             }
         }
         if let Some(slotted) = meta_table.get_mut(&slotted_sym) {
@@ -656,18 +715,17 @@ async fn main() {
                 // pre-transformed our rules when populating the rule map.
                 if let Some(rule) = field_owning_class_rules.get(&field.type_pretty) {
                     for label_rule in &rule.labels {
-                        meta.labels.insert(label_rule.label.clone());
+                        meta.labels.insert(label_rule.label);
                     }
                 }
 
                 let (ptr_infos, type_labels) = ontology
-                .config
-                .maybe_parse_type_as_pointer(&field.type_pretty);
+                    .config
+                    .maybe_parse_type_as_pointer(&field.type_pretty);
                 for label in type_labels {
                     meta.labels.insert(label);
                 }
-                for (ptr_kind, pointee_pretty) in ptr_infos
-                {
+                for (ptr_kind, pointee_pretty) in ptr_infos {
                     if let Some(pointee_syms) = id_table.get(&pointee_pretty) {
                         // We need to find the first symbol that's referring to a type.
                         // Conveniently, for C++, these will always start with `T_`,
@@ -680,16 +738,12 @@ async fn main() {
                         if let Some(sym) = best_sym {
                             field.pointer_info.push(StructuredPointerInfo {
                                 kind: ptr_kind.clone(),
-                                sym: sym.clone(),
+                                sym: *sym,
                             });
 
-                            let member_uses = field_member_use_table
-                                .entry(sym.clone())
-                                .or_insert_with(|| BTreeMap::new());
-                            let use_details = member_uses
-                                .entry(meta.sym.clone())
-                                .or_insert_with(|| Vec::new());
-                            use_details.push((field.pretty.clone(), ptr_kind));
+                            let member_uses = field_member_use_table.entry(*sym).or_default();
+                            let use_details = member_uses.entry(meta.sym).or_default();
+                            use_details.push((field.pretty, ptr_kind));
                         }
                     } else {
                         info!(
@@ -705,12 +759,12 @@ async fn main() {
     // ### Process Ontology Rules
     for (pretty_id, rule) in ontology.config.pretty.iter() {
         // #### Labels we just slap on
-        if rule.labels.len() > 0 {
-            if let Some(root_syms) = id_table.get(&pretty_id) {
+        if !rule.labels.is_empty() {
+            if let Some(root_syms) = id_table.get(pretty_id) {
                 for sym in root_syms {
-                    if let Some(sym_meta) = meta_table.get_mut(&sym) {
+                    if let Some(sym_meta) = meta_table.get_mut(sym) {
                         for label in &rule.labels {
-                            sym_meta.labels.insert(label.clone());
+                            sym_meta.labels.insert(*label);
                         }
                     }
                 }
@@ -718,19 +772,26 @@ async fn main() {
         }
 
         // #### Runnables
-        if rule.runnable {
+        if let Some(runnable_mode) = &rule.runnable {
             info!(" Processing pretty runnable rule for: {}", pretty_id);
-            if let Some(root_method_syms) = id_table.get(&pretty_id) {
+            if let Some(root_method_syms) = id_table.get(pretty_id) {
                 // The list of symbols to process for the runnable relationship.
                 // We process the root syms to find their descendants, but we
                 // don't actually process the root symbols.  These pending syms
                 // will both be directly processed and have their children
                 // appended as well.
                 let mut pending_method_syms = vec![];
+                let mut is_jvm = false;
                 for sym in root_method_syms {
-                    if let Some(sym_meta) = meta_table.get(&sym) {
+                    // XXX We should really have an easy way to figure out the
+                    // implementation language from the structured record.  Right
+                    // now we only really have that for binding slots.
+                    if sym.starts_with("S_jvm_") {
+                        is_jvm = true;
+                    }
+                    if let Some(sym_meta) = meta_table.get(sym) {
                         for over in &sym_meta.overridden_by_syms {
-                            pending_method_syms.push(over.clone());
+                            pending_method_syms.push(*over);
                         }
                     }
                 }
@@ -744,7 +805,7 @@ async fn main() {
                     // use the method to find its owning class
                     let class_sym = if let Some(method_meta) = meta_table.get(&method_sym) {
                         for over in &method_meta.overridden_by_syms {
-                            pending_method_syms.push(over.clone());
+                            pending_method_syms.push(*over);
                         }
 
                         match method_meta.parent_sym {
@@ -758,32 +819,47 @@ async fn main() {
                     info!("  found class sym: {}", class_sym);
 
                     // ### use the class to find its constructors
-                    let constructor_syms = if let Some(class_meta) = meta_table.get(&class_sym) {
-                        let mut syms = vec![];
-                        let class_name = class_meta.pretty.rsplit("::").next().unwrap();
-                        // We expect the constructors to have the same name as the class; currently
-                        // for C++ we don't actually emit a special "props" "constructor" value.
-                        let constructor_pretty =
-                            ustr(&format!("{}::{}", class_meta.pretty, class_name));
-                        for method in &class_meta.methods {
-                            // Skip constructors that aren't known; this can happen for the copy
-                            // constructor/etc.
-                            if method.pretty == constructor_pretty
-                                && table.contains_key(&method.sym)
-                            {
-                                syms.push(method.sym);
+                    let linkage_syms = match runnable_mode {
+                        OntologyRunnableMode::Constructor => {
+                            if let Some(class_meta) = meta_table.get(&class_sym) {
+                                let mut syms = vec![];
+                                // For C++ we expect the constructors to have the same name as the class;
+                                // currently for C++ we don't actually emit a special "props" "constructor"
+                                // value.
+                                //
+                                // For the JVM we expect constructors to have a pretty name of "<init>".
+                                let constructor_name: &str = if is_jvm {
+                                    "<init>"
+                                } else {
+                                    class_meta.pretty.rsplit("::").next().unwrap()
+                                };
+
+                                let constructor_pretty =
+                                    ustr(&format!("{}::{}", class_meta.pretty, constructor_name));
+                                for method in &class_meta.methods {
+                                    // Skip constructors that aren't known; this can happen for the copy
+                                    // constructor/etc.
+                                    if method.pretty == constructor_pretty
+                                        && table.contains_key(&method.sym)
+                                    {
+                                        syms.push(method.sym);
+                                    }
+                                }
+                                syms
+                            } else {
+                                continue;
                             }
                         }
-                        syms
-                    } else {
-                        continue;
+                        OntologyRunnableMode::Class => {
+                            vec![class_sym]
+                        }
                     };
 
-                    info!("  found constructor syms: {:?}", constructor_syms);
+                    info!("  found linkage syms: {:?}", linkage_syms);
 
                     // ### mutate each of the constructors to have the ontology slot
-                    for con_sym in &constructor_syms {
-                        if let Some(con_meta) = meta_table.get_mut(&con_sym) {
+                    for con_sym in &linkage_syms {
+                        if let Some(con_meta) = meta_table.get_mut(con_sym) {
                             // XXX we could track precedence for runnable rules so that
                             // we could remove lower precedence relationships here.  This
                             // would be relevant for WorkerRunnable.
@@ -799,7 +875,7 @@ async fn main() {
                     if let Some(method_meta) = meta_table.get_mut(&method_sym) {
                         method_meta.ontology_slots.push(OntologySlotInfo {
                             slot_kind: OntologySlotKind::RunnableConstructor,
-                            syms: constructor_syms,
+                            syms: linkage_syms,
                         })
                     }
                 }
@@ -815,13 +891,13 @@ async fn main() {
                 " Processing pretty label_containing_class for: {}",
                 pretty_id
             );
-            if let Some(root_class_syms) = id_table.get(&pretty_id) {
+            if let Some(root_class_syms) = id_table.get(pretty_id) {
                 let mut investigate_class_syms = vec![];
                 // We don't care about the root itself, just its subclasses.
                 for sym in root_class_syms {
-                    if let Some(sym_meta) = meta_table.get(&sym) {
+                    if let Some(sym_meta) = meta_table.get(sym) {
                         for sub in &sym_meta.subclass_syms {
-                            investigate_class_syms.push(sub.clone());
+                            investigate_class_syms.push(*sub);
                         }
                     }
                 }
@@ -833,7 +909,7 @@ async fn main() {
                     };
 
                     for sub in &sym_meta.subclass_syms {
-                        investigate_class_syms.push(sub.clone());
+                        investigate_class_syms.push(*sub);
                     }
 
                     // The structured record currently doesn't have a reference
@@ -848,9 +924,9 @@ async fn main() {
                     let containing_pretty_ustr = ustr(&containing_pretty);
                     if let Some(containing_syms) = id_table.get(&containing_pretty_ustr) {
                         for sym in containing_syms {
-                            if let Some(containing_meta) = meta_table.get_mut(&sym) {
+                            if let Some(containing_meta) = meta_table.get_mut(sym) {
                                 for rule in &label_rule.labels {
-                                    containing_meta.labels.insert(rule.label.clone());
+                                    containing_meta.labels.insert(rule.label);
                                 }
                             }
                         }
@@ -870,13 +946,13 @@ async fn main() {
                 " Processing pretty label_containing_class_field_uses rule for: {}",
                 pretty_id
             );
-            if let Some(root_class_syms) = id_table.get(&pretty_id) {
+            if let Some(root_class_syms) = id_table.get(pretty_id) {
                 let mut investigate_class_syms = vec![];
                 // We don't care about the root itself, just its subclasses.
                 for sym in root_class_syms {
-                    if let Some(sym_meta) = meta_table.get(&sym) {
+                    if let Some(sym_meta) = meta_table.get(sym) {
                         for sub in &sym_meta.subclass_syms {
-                            investigate_class_syms.push(sub.clone());
+                            investigate_class_syms.push(*sub);
                         }
                     }
                 }
@@ -888,7 +964,7 @@ async fn main() {
                     };
 
                     for sub in &sym_meta.subclass_syms {
-                        investigate_class_syms.push(sub.clone());
+                        investigate_class_syms.push(*sub);
                     }
 
                     // The structured record currently doesn't have a reference
@@ -903,7 +979,7 @@ async fn main() {
                     let containing_pretty_ustr = ustr(&containing_pretty);
                     if let Some(containing_syms) = id_table.get(&containing_pretty_ustr) {
                         for sym in containing_syms {
-                            if let Some(containing_meta) = meta_table.get_mut(&sym) {
+                            if let Some(containing_meta) = meta_table.get_mut(sym) {
                                 for field in &mut containing_meta.fields {
                                     if let Some(kind_map) = table.get(&field.sym) {
                                         if let Some(path_hits) = kind_map.get(&AnalysisKind::Use) {
@@ -913,7 +989,7 @@ async fn main() {
                                                         if hit.context.ends_with(
                                                             rule.context_sym_suffix.as_str(),
                                                         ) {
-                                                            field.labels.insert(rule.label.clone());
+                                                            field.labels.insert(rule.label);
                                                         }
                                                     }
                                                 }
@@ -985,7 +1061,7 @@ async fn main() {
                     // NSS seems to have an issue with auto-generated files we
                     // don't know about, so this can't be a warning because it's
                     // too spammy.
-                    if reported_missing_concise.insert(path.clone()) {
+                    if reported_missing_concise.insert(*path) {
                         info!("Missing concise info for path '{}'", path);
                     }
                 }
@@ -1051,7 +1127,7 @@ async fn main() {
         let kindmap = json!(kindmap);
         {
             let id_line = format!("!{}\n", id);
-            let inline_line = format!(":{}\n", kindmap.to_string());
+            let inline_line = format!(":{}\n", kindmap);
             if inline_line.len() >= EXTERNAL_STORAGE_THRESHOLD {
                 // ### External storage.
                 xref_out.write_all(id_line.as_bytes()).unwrap();
@@ -1082,7 +1158,7 @@ async fn main() {
         let jumpref_info = convert_crossref_value_to_sym_info_rep(kindmap, &id, fallback_pretty);
         {
             let id_line = format!("!{}\n", id);
-            let inline_line = format!(":{}\n", jumpref_info.to_string());
+            let inline_line = format!(":{}\n", jumpref_info);
             if inline_line.len() >= EXTERNAL_STORAGE_THRESHOLD {
                 // ### External storage.
                 jumpref_out.write_all(id_line.as_bytes()).unwrap();

@@ -17,9 +17,9 @@ pub struct OntologyMappingConfig {
 pub struct OntologyRule {
     /// When specified, treats the given symbol/identifier as an nsIRunnable::Run
     /// style method where overrides should be treated as runnables and have
-    /// ontology slots allocated to point to the concrete constructors.
-    #[serde(default)]
-    pub runnable: bool,
+    /// ontology slots allocated to point to the concrete constructors (C++) or
+    /// the class (Java/Kotlin reflection idiom)
+    pub runnable: Option<OntologyRunnableMode>,
     /// Given a base class, find all of its subclasses which are expected to be
     /// inner classes and label the outer class that contains them.  This mainly
     /// exists for detecting cycle collection where we have an inner class that
@@ -42,6 +42,18 @@ pub struct OntologyRule {
     /// Labels that we always apply to the class.
     #[serde(default)]
     pub labels: Vec<Ustr>,
+}
+
+#[derive(Eq, PartialEq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OntologyRunnableMode {
+    /// The original mode, appropriate for C++ and XPCOM, we assume a reference
+    /// to the constructor will result in the runnable subequently running.
+    Constructor,
+    /// Introduce for the "androidx::work::Worker::doWork" Kotlin idiom where
+    /// we only see references to the class in the analysis data, and not the
+    /// constructor.
+    Class,
 }
 
 #[derive(Deserialize)]
@@ -303,7 +315,7 @@ impl OntologyMappingConfig {
                 // - After a ",", so token.len() == 0
                 // - After a ">", but we handle that via the `Closing` state.
                 (TypeParseState::Typish, Some(' ')) => {
-                    if token.len() > 0 {
+                    if !token.is_empty() {
                         if token.as_str() == "const" {
                             cur_type.is_const = true;
                         } else if token.as_str() == "union" {
@@ -326,7 +338,7 @@ impl OntologyMappingConfig {
                             // rabbit hole.
                             return (results, labels_to_apply);
                         } else {
-                            if cur_type.identifier.len() > 0 {
+                            if !cur_type.identifier.is_empty() {
                                 info!(
                                     type_str,
                                     prev_id = cur_type.identifier,
@@ -348,7 +360,7 @@ impl OntologyMappingConfig {
                     cur_type.is_ref = true;
                 }
                 (TypeParseState::Typish, Some('<')) => {
-                    if cur_type.identifier.len() > 0 {
+                    if !cur_type.identifier.is_empty() {
                         info!(
                             type_str,
                             prev_id = cur_type.identifier,
@@ -363,7 +375,7 @@ impl OntologyMappingConfig {
                     cur_type = ShoddyType::default();
                 }
                 (TypeParseState::Typish, Some(',')) => {
-                    if cur_type.identifier.len() > 0 {
+                    if !cur_type.identifier.is_empty() {
                         info!(
                             type_str,
                             prev_id = cur_type.identifier,
@@ -382,11 +394,8 @@ impl OntologyMappingConfig {
                     // those will have a > and then be in closing and then see a
                     // ',', but we can do better or at least add more comments.
                     let parent_name = ustr(&cur_type.identifier);
-                    match self.types.get(&parent_name) {
-                        Some(OntologyType::Nothing) => {
-                            cur_type.is_nothing = true;
-                        }
-                        _ => {}
+                    if let Some(OntologyType::Nothing) = self.types.get(&parent_name) {
+                        cur_type.is_nothing = true;
                     }
 
                     if let Some(container_type) = type_stack.last_mut() {
@@ -399,19 +408,17 @@ impl OntologyMappingConfig {
                 }
                 (TypeParseState::Typish, Some('>')) | (TypeParseState::Closing, Some('>')) => {
                     // In the closing state we don't process the token.
-                    if state == TypeParseState::Typish {
-                        if token.len() > 0 {
-                            if cur_type.identifier.len() > 0 {
-                                info!(
-                                    type_str,
-                                    prev_id = cur_type.identifier,
-                                    new_id = token,
-                                    "Got an identifier when already had an identifier!"
-                                );
-                            }
-                            cur_type.identifier = token;
-                            token = String::new();
+                    if state == TypeParseState::Typish && !token.is_empty() {
+                        if !cur_type.identifier.is_empty() {
+                            info!(
+                                type_str,
+                                prev_id = cur_type.identifier,
+                                new_id = token,
+                                "Got an identifier when already had an identifier!"
+                            );
                         }
+                        cur_type.identifier = token;
+                        token = String::new();
                     }
 
                     // A type is being closed out, the cur_type goes in the parent,
@@ -431,7 +438,7 @@ impl OntologyMappingConfig {
                     let process_args = match self.types.get(&parent_name) {
                         Some(OntologyType::Decorator(dec)) => {
                             for label in &dec.labels {
-                                labels_to_apply.push(label.clone());
+                                labels_to_apply.push(*label);
                             }
                             // Process the arguments on their own still.
                             true
@@ -466,9 +473,7 @@ impl OntologyMappingConfig {
                             // would have already processed tha type at its ">".
                             false
                         }
-                        Some(OntologyType::Variant) => {
-                            true
-                        }
+                        Some(OntologyType::Variant) => true,
                         Some(OntologyType::Nothing) => {
                             cur_type.is_nothing = true;
                             false
@@ -502,15 +507,11 @@ impl OntologyMappingConfig {
                                 continue;
                             }
                             if arg_type.is_pointer {
-                                results.push((
-                                    OntologyPointerKind::Raw,
-                                    ustr(&arg_type.identifier),
-                                ));
+                                results
+                                    .push((OntologyPointerKind::Raw, ustr(&arg_type.identifier)));
                             } else if arg_type.is_ref {
-                                results.push((
-                                    OntologyPointerKind::Ref,
-                                    ustr(&arg_type.identifier),
-                                ));
+                                results
+                                    .push((OntologyPointerKind::Ref, ustr(&arg_type.identifier)));
                             } else if arg_type.is_tag {
                                 if let Some(OntologyType::Value) =
                                     self.types.get(&ustr(&arg_type.identifier))
@@ -562,7 +563,7 @@ impl OntologyMappingConfig {
             }
         }
 
-        if token.len() > 0 {
+        if !token.is_empty() {
             cur_type.identifier = token;
         }
 
@@ -700,12 +701,18 @@ kind = "contains"
 
     assert_eq!(
         c.maybe_parse_type_as_pointer("nsTArray<RefPtr<class SyntheticExample> >"),
-        (vec![(OntologyPointerKind::Strong, ustr("SyntheticExample"))], vec![])
+        (
+            vec![(OntologyPointerKind::Strong, ustr("SyntheticExample"))],
+            vec![]
+        )
     );
 
     assert_eq!(
         c.maybe_parse_type_as_pointer("nsTArray<class SyntheticExample *>"),
-        (vec![(OntologyPointerKind::Raw, ustr("SyntheticExample"))], vec![])
+        (
+            vec![(OntologyPointerKind::Raw, ustr("SyntheticExample"))],
+            vec![]
+        )
     );
 
     assert_eq!(
@@ -741,11 +748,14 @@ kind = "contains"
 
     assert_eq!(
         c.maybe_parse_type_as_pointer("class mozilla::Atomic<class mozilla::dom::WorkerPrivate *>"),
-        (vec![
-            (OntologyPointerKind::Raw, ustr("mozilla::dom::WorkerPrivate"))
-        ], vec![ustr("atomic")])
+        (
+            vec![(
+                OntologyPointerKind::Raw,
+                ustr("mozilla::dom::WorkerPrivate")
+            )],
+            vec![ustr("atomic")]
+        )
     );
-
 
     assert_eq!(
         c.maybe_parse_type_as_pointer("class mozilla::Maybe<class nsTString<char16_t> >"),

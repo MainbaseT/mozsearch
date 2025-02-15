@@ -25,14 +25,14 @@ extern crate env_logger;
 extern crate log;
 extern crate tools;
 use crate::languages::FormatAs;
+use tools::doc_trees_handler::find_doc_url;
 use tools::file_format::analysis::{read_analysis, read_source};
-use tools::format::{create_markdown_panel_section, format_file_data};
 use tools::file_format::crossref_lookup::CrossrefLookupMap;
+use tools::format::{create_markdown_panel_section, format_file_data};
 use tools::languages;
+use tools::url_encode_path::url_encode_path;
 
 use tools::output::{PanelItem, PanelSection};
-
-use tools::url_map_handler::set_url_map_path;
 
 extern crate flate2;
 use flate2::write::GzEncoder;
@@ -43,21 +43,25 @@ fn main() {
 
     let args: Vec<_> = env::args().collect();
     // TODO: refactor _fname_args out of existence; we now require paths to come via stdin.
-    let (base_args, _fname_args) = args.split_at(4);
+    let (base_args, _fname_args) = args.split_at(5);
 
     let mut stdout = io::stdout().lock();
 
     let pre_config = Instant::now();
     let tree_name = &base_args[2];
-    let cfg = config::load(&base_args[1], true, Some(&tree_name));
+    let cfg = config::load(
+        &base_args[1],
+        true,
+        Some(tree_name),
+        Some(base_args[3].to_string()),
+        Some(base_args[4].to_string()),
+    );
     writeln!(
         stdout,
         "Config file read, duration: {}us",
         pre_config.elapsed().as_micros() as u64
     )
     .unwrap();
-
-    set_url_map_path(&base_args[3]);
 
     let tree_config = cfg.trees.get(tree_name).unwrap();
 
@@ -84,7 +88,12 @@ fn main() {
     let pre_jumpref = Instant::now();
     let jumpref_lookup_map = CrossrefLookupMap::new(&jumpref_path, &jumpref_extra_path);
 
-    writeln!(stdout, "Jumpref opened, duration: {}us", pre_jumpref.elapsed().as_micros() as u64).unwrap();
+    writeln!(
+        stdout,
+        "Jumpref opened, duration: {}us",
+        pre_jumpref.elapsed().as_micros() as u64
+    )
+    .unwrap();
 
     let pre_lookup_map = Instant::now();
     let file_lookup_path = format!(
@@ -100,8 +109,8 @@ fn main() {
     .unwrap();
 
     let pre_blame_prep = Instant::now();
-    let (blame_commit, head_oid) = match &tree_config.git {
-        &Some(ref git) => {
+    let (blame_commit, head_oid) = match tree_config.git {
+        Some(ref git) => {
             let head_oid = git.repo.refname_to_id("HEAD").unwrap();
             let blame_commit = if let Some(ref blame_repo) = git.blame_repo {
                 let blame_oid = blame_repo.refname_to_id("HEAD").unwrap();
@@ -111,7 +120,7 @@ fn main() {
             };
             (blame_commit, Some(head_oid))
         }
-        &None => (None, None),
+        None => (None, None),
     };
 
     let head_commit =
@@ -136,6 +145,7 @@ fn main() {
     let mut stdin = io::stdin().lock();
 
     let mut path_buf = String::new();
+    #[allow(clippy::unit_cmp)]
     while () == path_buf.clear() && stdin.read_line(&mut path_buf).unwrap() > 0 {
         let path = ustr(path_buf.trim_end());
         let file_start = Instant::now();
@@ -191,12 +201,9 @@ fn main() {
 
         let mut reader = BufReader::new(&source_file);
 
-        match format {
-            FormatAs::Binary => {
-                let _ = io::copy(&mut reader, &mut writer);
-                continue;
-            }
-            _ => {}
+        if let FormatAs::Binary = format {
+            let _ = io::copy(&mut reader, &mut writer);
+            continue;
         };
 
         let pre_analysis_load = Instant::now();
@@ -251,11 +258,11 @@ fn main() {
 
         let extension = path_wrapper
             .extension()
-            .unwrap_or(&OsStr::new(""))
+            .unwrap_or(OsStr::new(""))
             .to_str()
             .unwrap();
         let show_header = match extension_mapping.get(extension) {
-            Some(&(ref description, ref try_extensions)) => {
+            Some((description, try_extensions)) => {
                 let mut result = None;
                 for try_ext in try_extensions {
                     let try_buf = path_wrapper.with_extension(try_ext);
@@ -280,7 +287,7 @@ fn main() {
         if let Some((other_desc, other_path)) = show_header {
             source_panel_items.push(PanelItem {
                 title: format!("Go to {} file", other_desc),
-                link: other_path,
+                link: url_encode_path(other_path.as_str()),
                 update_link_lineno: "",
                 accel_key: None,
                 copyable: false,
@@ -311,39 +318,75 @@ fn main() {
             });
         };
 
+        let encoded_path = url_encode_path(path.as_str());
+
         if let Some(oid) = head_oid {
             if !path.contains("__GENERATED__") {
                 let mut vcs_panel_items = vec![];
                 vcs_panel_items.push(PanelItem {
                     title: "Permalink".to_owned(),
-                    link: format!("/{}/rev/{}/{}", tree_name, oid, path),
+                    link: format!("/{}/rev/{}/{}", tree_name, oid, encoded_path),
                     update_link_lineno: "#{}",
                     accel_key: Some('Y'),
                     copyable: true,
                 });
                 vcs_panel_items.push(PanelItem {
                     title: "Remove the Permalink".to_owned(),
-                    link: format!("/{}/source/{}", tree_name, path),
+                    link: format!("/{}/source/{}", tree_name, encoded_path),
                     update_link_lineno: "#{}",
                     accel_key: None,
                     copyable: false,
                 });
-                if let Some(ref hg_root) = tree_config.paths.hg_root {
+
+                let gh_log_link = tree_config
+                    .paths
+                    .github_repo
+                    .as_ref()
+                    .map(|gh_root| format!("{}/commits/HEAD/{}", gh_root, encoded_path));
+                let hg_log_link = tree_config
+                    .paths
+                    .hg_root
+                    .as_ref()
+                    .map(|hg_root| format!("{}/log/tip/{}", hg_root, encoded_path));
+                if let Some(link) = gh_log_link {
                     vcs_panel_items.push(PanelItem {
-                        title: "Log".to_owned(),
-                        link: format!("{}/log/tip/{}", hg_root, path),
+                        title: "Git log".to_owned(),
+                        link,
+                        update_link_lineno: "",
+                        accel_key: hg_log_link.is_none().then_some('L'),
+                        copyable: true,
+                    });
+                }
+                if let Some(link) = hg_log_link {
+                    vcs_panel_items.push(PanelItem {
+                        title: "Mercurial log".to_owned(),
+                        link,
                         update_link_lineno: "",
                         accel_key: Some('L'),
                         copyable: true,
                     });
+                }
+
+                let gh_raw_link = tree_config
+                    .paths
+                    .github_repo
+                    .as_ref()
+                    .map(|gh_root| format!("{}/raw/HEAD/{}", gh_root, encoded_path));
+                let hg_raw_link = tree_config
+                    .paths
+                    .hg_root
+                    .as_ref()
+                    .map(|hg_root| format!("{}/raw-file/tip/{}", hg_root, encoded_path));
+                if let Some(link) = gh_raw_link.or(hg_raw_link) {
                     vcs_panel_items.push(PanelItem {
                         title: "Raw".to_owned(),
-                        link: format!("{}/raw-file/tip/{}", hg_root, path),
+                        link,
                         update_link_lineno: "",
                         accel_key: Some('R'),
                         copyable: true,
                     });
                 }
+
                 if tree_config.paths.git_blame_path.is_some() {
                     vcs_panel_items.push(PanelItem {
                         title: "Blame".to_owned(),
@@ -367,7 +410,7 @@ fn main() {
         if let Some(ref hg_root) = tree_config.paths.hg_root {
             tools_items.push(PanelItem {
                 title: "HG Web".to_owned(),
-                link: format!("{}/file/tip/{}", hg_root, path),
+                link: format!("{}/file/tip/{}", hg_root, encoded_path),
                 update_link_lineno: "#l{}",
                 accel_key: None,
                 copyable: false,
@@ -376,30 +419,47 @@ fn main() {
         if let Some(ref ccov_root) = tree_config.paths.ccov_root {
             tools_items.push(PanelItem {
                 title: "Code Coverage".to_owned(),
-                link: format!("{}#revision=latest&path={}&view=file", ccov_root, path),
+                link: format!(
+                    "{}#revision=latest&path={}&view=file",
+                    ccov_root, encoded_path
+                ),
                 update_link_lineno: "&line={}",
                 accel_key: None,
                 copyable: false,
             });
         }
-        if let Some(ref github) = tree_config.paths.github_repo {
-            match Path::new(path.as_str()).extension().and_then(OsStr::to_str) {
-                Some("md") | Some("rst") => {
+
+        match Path::new(path.as_str()).extension().and_then(OsStr::to_str) {
+            Some("md") | Some("rst") => {
+                match find_doc_url(&cfg, path.as_str()) {
+                    Some(url) => {
+                        tools_items.push(PanelItem {
+                            title: "Source Docs".to_owned(),
+                            link: url,
+                            update_link_lineno: "",
+                            accel_key: None,
+                            copyable: false,
+                        });
+                    }
+                    None => {}
+                }
+
+                if let Some(ref github) = tree_config.paths.github_repo {
                     tools_items.push(PanelItem {
-                        title: "Rendered view".to_owned(),
+                        title: "GitHub Rendered view".to_owned(),
                         link: format!(
                             "{}/blob/{}/{}",
                             github,
                             head_oid.map_or("master".to_string(), |x| x.to_string()),
-                            path
+                            encoded_path
                         ),
                         update_link_lineno: "",
                         accel_key: None,
                         copyable: false,
                     });
                 }
-                _ => (),
-            };
+            }
+            _ => {}
         }
 
         let liquid_globals = liquid::object!({

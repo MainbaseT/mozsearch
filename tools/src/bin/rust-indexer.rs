@@ -97,7 +97,7 @@ fn sanitize_symbol(sym: &str) -> String {
 
 fn pretty_symbol(sym: &str) -> Cow<str> {
     use scip::symbol::SymbolFormatOptions;
-    if let Ok(sym) = scip::symbol::parse_symbol(&sym) {
+    if let Ok(sym) = scip::symbol::parse_symbol(sym) {
         return Cow::Owned(scip::symbol::format_symbol_with(
             sym,
             SymbolFormatOptions {
@@ -148,7 +148,7 @@ impl Defs {
     fn insert(&mut self, analysis: &data::Analysis, def: &data::Def) {
         let crate_id = analysis.prelude.as_ref().unwrap().crate_id.clone();
         let mut definition = def.clone();
-        definition.qualname = crate_independent_qualname(&def, &crate_id);
+        definition.qualname = crate_independent_qualname(def, &crate_id);
 
         let index = definition.id.index;
         let defid = DefId(crate_id, index);
@@ -359,7 +359,7 @@ fn ignore_boring_spans(span: &data::SpanData) -> Option<&data::SpanData> {
 
 fn pretty_for_impl(imp: &data::Impl, qualname: &str) -> String {
     let mut pretty = impl_kind_to_human(&imp.kind).to_owned();
-    pretty.push_str(" ");
+    pretty.push(' ');
     pretty.push_str(qualname);
 
     pretty
@@ -367,7 +367,7 @@ fn pretty_for_impl(imp: &data::Impl, qualname: &str) -> String {
 
 fn pretty_for_def(def: &data::Def, qualname: &str) -> String {
     let mut pretty = def_kind_to_human(def.kind).to_owned();
-    pretty.push_str(" ");
+    pretty.push(' ');
     // We use the unsanitized qualname here because it's more human-readable
     // and the source-analysis pretty name is allowed to have commas and such
     pretty.push_str(qualname);
@@ -384,7 +384,7 @@ fn visit_def(
     context: Option<&str>,
     nesting: Option<&data::SpanData>,
 ) {
-    let pretty = pretty_for_def(&def, &qualname);
+    let pretty = pretty_for_def(def, qualname);
     visit_common(
         out_data, kind, location, qualname, &pretty, context, nesting,
     );
@@ -429,7 +429,7 @@ fn visit_common(
             },
             arg_ranges: vec![],
         },
-        loc: loc.clone(),
+        loc,
     };
     out_data.insert(to_string(&target_data).unwrap());
 
@@ -454,7 +454,7 @@ fn visit_common(
         data: AnalysisSource {
             source: SourceTag::Source,
             syntax: vec![],
-            pretty: ustr(&pretty),
+            pretty: ustr(pretty),
             sym: vec![ustr(&sanitized)],
             no_crossref: false,
             nesting_range,
@@ -462,6 +462,8 @@ fn visit_common(
             type_pretty: None,
             type_sym: None,
             arg_ranges: vec![],
+            expansion_info: None,
+            confidence: None,
         },
         loc,
     };
@@ -505,11 +507,8 @@ fn extract_span_from_source_as_buffer(
 /// We will log to log::Error in the event of a file read problem because this can be indicative
 /// of lower level problems (ex: in vagrant), but not for utf-8 errors which are more expected
 /// from sketchy source-files.
-fn extract_span_from_source_as_string(
-    mut reader: &mut File,
-    span: &data::SpanData,
-) -> Option<String> {
-    match extract_span_from_source_as_buffer(&mut reader, &span) {
+fn extract_span_from_source_as_string(reader: &mut File, span: &data::SpanData) -> Option<String> {
+    match extract_span_from_source_as_buffer(reader, span) {
         Ok(buffer) => match String::from_utf8(buffer.into_vec()) {
             Ok(s) => Some(s),
             Err(_) => None,
@@ -635,7 +634,7 @@ fn analyze_file(
                     AnalysisKind::Def,
                     &def.span,
                     &trait_dependent_name,
-                    &def,
+                    def,
                     Some(&parent.qualname),
                     None,
                 )
@@ -643,15 +642,15 @@ fn analyze_file(
         }
 
         let crate_id = &file_analysis.prelude.as_ref().unwrap().crate_id;
-        let qualname = crate_independent_qualname(&def, crate_id);
-        let nested_span = recursive_union_spans_of_def(def, &file_analysis, &defs);
+        let qualname = crate_independent_qualname(def, crate_id);
+        let nested_span = recursive_union_spans_of_def(def, file_analysis, defs);
         let maybe_nested = ignore_boring_spans(&nested_span);
         visit_def(
             &mut dataset,
             AnalysisKind::Def,
             &def.span,
             &qualname,
-            &def,
+            def,
             parent.as_ref().map(|p| &*p.qualname),
             maybe_nested,
         )
@@ -675,8 +674,8 @@ fn analyze_file(
 
             let crate_id = &file_analysis.prelude.as_ref().unwrap().crate_id;
             let qualname = construct_qualname(&crate_id.name, &name);
-            let pretty = pretty_for_impl(&imp, &qualname);
-            let nested_span = union_spans_of_defs(&imp.span, &imp.children, &file_analysis, &defs);
+            let pretty = pretty_for_impl(imp, &qualname);
+            let nested_span = union_spans_of_defs(&imp.span, &imp.children, file_analysis, defs);
             let maybe_nested = ignore_boring_spans(&nested_span);
             // XXX visit_common currently never emits any syntax types; we want to pretend this is
             // a namespace once it does.
@@ -716,7 +715,7 @@ fn analyze_file(
 
     for obj in &dataset {
         file.write_all(obj.as_bytes()).unwrap();
-        write!(file, "\n").unwrap();
+        writeln!(file).unwrap();
     }
 }
 
@@ -724,7 +723,7 @@ fn analyze_file(
 // combination of backslashes and forward slashes for windows platform builds
 // because the paths are normalized by a sed script that will match backslashes
 // and output front-slashes.  The sed script could be made smarter.
-fn linuxized_path(path: &PathBuf) -> PathBuf {
+fn linuxized_path(path: &Path) -> PathBuf {
     if let Some(pathstr) = path.to_str() {
         if pathstr.find('\\').is_some() {
             // Pesky backslashes, get rid of them!
@@ -734,7 +733,7 @@ fn linuxized_path(path: &PathBuf) -> PathBuf {
             if converted.find(":/") == Some(1) {
                 // Starts with a drive letter, so let's turn this into
                 // an absolute path
-                let abs = "/".to_string() + &converted;
+                let abs = "/".to_string() + converted.as_str();
                 return PathBuf::from(abs);
             }
             // Turn it into a relative path
@@ -742,7 +741,7 @@ fn linuxized_path(path: &PathBuf) -> PathBuf {
         }
     }
     // Already a valid path!
-    path.clone()
+    path.to_path_buf()
 }
 
 fn analyze_crate(analysis: &data::Analysis, defs: &Defs, tree_info: &TreeInfo) {
@@ -844,7 +843,7 @@ fn analyze_using_rls(tree_info: &TreeInfo, inputs: Vec<PathBuf>) {
     }
 
     for krate in crates {
-        analyze_crate(&krate.analysis, &defs, &tree_info);
+        analyze_crate(&krate.analysis, &defs, tree_info);
     }
 }
 
@@ -998,14 +997,13 @@ fn analyze_using_scip(tree_info: &TreeInfo, scip_prefix: Option<&PathBuf>, scip_
                         type_pretty: None,
                         type_sym: None,
                         arg_ranges: vec![],
+                        expansion_info: None,
+                        confidence: None,
                     },
                     loc,
                 };
                 write_line(&mut file, &source_data);
             }
-
-            // TODO: Contextual info.
-            let context = None;
 
             let get_target_data = |sym: &str, kind: AnalysisKind| -> WithLocation<AnalysisTarget> {
                 let global = sanitize_symbol(sym);
@@ -1016,15 +1014,16 @@ fn analyze_using_scip(tree_info: &TreeInfo, scip_prefix: Option<&PathBuf>, scip_
                         kind,
                         pretty: ustr(&pretty),
                         sym: ustr(&global),
-                        context: ustr(context.unwrap_or("")),
-                        contextsym: ustr(context.unwrap_or("")),
+                        // TODO: Contextual info.
+                        context: ustr(""),
+                        contextsym: ustr(""),
                         peek_range: LineRange {
                             start_lineno: 0,
                             end_lineno: 0,
                         },
                         arg_ranges: vec![],
                     },
-                    loc: loc.clone(),
+                    loc,
                 }
             };
 

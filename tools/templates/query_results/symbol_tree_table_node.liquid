@@ -1,39 +1,79 @@
 <tr>
-  <td colspan="{{ platforms.size | times: 2 | plus: 2 }}">
+  <td class="base-class-{{ node.isBaseClass }}" colspan="{{ platforms.size | times: 2 | plus: 3 }}">
     <h3>
-      <span data-symbols="{{ node.symbols }}">
-        {{- node.name | escape -}}
-      </span>
+      <code>
+        <span data-symbols="{{ node.symbols }}">
+          {{- node.name | escape -}}
+          {%- if node.isBaseClass == true %} (base class){% endif -%}
+        </span>
+      </code>
     </h3>
   </td>
 </tr>
+{%- if node.isBaseClass == false -%}
+  <tr class="class-alignment-and-size">
+    <td class="name-cell"></td>
+    <td class="type-cell"></td>
+    <td class="line-cell"></td>
+    {%- for alignmentAndSize in node.alignmentAndSize -%}
+      <td class="class-alignment-cell">
+        <span class="class-alignment">
+          {{- alignmentAndSize.alignment | escape -}}
+        </span>
+      </td>
+      <td class="class-size-cell">
+        <span class="class-size">
+          {{- alignmentAndSize.size | escape -}}
+        </span>
+      </td>
+    {%- endfor -%}
+  </tr>
+{%- endif -%}
 {%- for item in node.items -%}
   {%- if item contains "Field" -%}
     <tr>
-      <td>
-        <span data-symbols="{{ item.Field.symbols }}">
-          {{- item.Field.name | escape -}}
-        </span>
-      </td>
-      <td>
-        {%- assign first = true -%}
-        {%- for type in item.Field.types -%}
-          {%- if first == false -%}
-            |<br>
-          {%- endif -%}
-          <span data-symbols="{{ type.symbols }}">
-            {{ type.name | escape }}
+      <td class="name-cell">
+        <code>
+          <span data-symbols="{{ item.Field.symbols }}">
+            {{- item.Field.name | escape -}}
           </span>
+        </code>
+      </td>
+      <td class="type-cell">
+        <code class="field-type">
+          {%- assign first = true -%}
+          {%- for type in item.Field.types -%}
+            {%- if first == false -%}
+              |<br>
+            {%- endif -%}
+            <span data-symbols="{{ type.symbols }}">
+              {{ type.name | escape }}
+            </span>
+            {%- assign first = false -%}
+          {%- endfor -%}
+        </code>
+      </td>
+      <td class="line-cell">
+        {%- assign first = true -%}
+        {%- for line in item.Field.lines -%}
+          {%- if first == false -%}
+            <br>
+          {%- endif -%}
+          <code>{{- line -}}</code>
           {%- assign first = false -%}
         {%- endfor -%}
       </td>
       {%- for offsetAndSize in item.Field.offsetAndSize -%}
         {%- if offsetAndSize -%}
           <td>
-            {{- offsetAndSize.offset | escape -}}
+            <span class="field-offset">
+              {{- offsetAndSize.offset | escape -}}
+            </span>
           </td>
           <td>
-            {{- offsetAndSize.size | escape -}}
+            <span class="field-size">
+              {{- offsetAndSize.size | escape -}}
+            </span>
           </td>
         {%- else -%}
           <td colspan="2">
@@ -43,12 +83,15 @@
     </tr>
   {%- elsif item contains "Hole" -%}
     <tr>
-      <td colspan="2">
-      </td>
+      <td class="name-cell"></td>
+      <td class="type-cell"></td>
+      <td class="line-cell"></td>
       {%- for hole in item.Hole -%}
         {%- if hole -%}
           <td colspan="2">
-            {{- hole | escape -}}
+            <span class="field-hole">
+              {{- hole | escape -}}
+            </span>
           </td>
         {%- else -%}
           <td colspan="2">
@@ -58,12 +101,15 @@
     </tr>
   {%- elsif item contains "EndPadding" -%}
     <tr>
-      <td colspan="2">
-      </td>
+      <td class="name-cell"></td>
+      <td class="type-cell"></td>
+      <td class="line-cell"></td>
       {%- for padding in item.EndPadding -%}
         {%- if padding -%}
           <td colspan="2">
-            {{- padding | escape -}}
+            <span class="field-padding">
+              {{- padding | escape -}}
+            </span>
           </td>
         {%- else -%}
           <td colspan="2">
@@ -73,7 +119,7 @@
     </tr>
   {%- elsif item contains "Warning" -%}
     <tr>
-      <th colspan="{{ platforms.size | times: 2 | plus: 2 }}">
+      <th colspan="{{ platforms.size | times: 2 | plus: 3 }}">
         <em class="warning">
           {{- item.Warning | escape -}}
         </em>

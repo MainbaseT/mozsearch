@@ -11,7 +11,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use scip::types::descriptor::Suffix;
 use serde_json::Map;
-use std::collections::{HashMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::fs::{self, File};
 use std::io;
 use std::io::BufReader;
@@ -22,7 +22,7 @@ use tools::file_format::analysis::{
     StructuredSuperInfo, StructuredTag, TargetTag, WithLocation,
 };
 use tools::file_format::config;
-use ustr::{ustr, Ustr, UstrMap};
+use ustr::{ustr, Ustr, UstrMap, UstrSet};
 
 /// Normalize illegal symbol characters into underscores.
 fn sanitize_symbol(sym: &str) -> String {
@@ -143,7 +143,7 @@ fn scip_roles_to_searchfox_analysis_kind(roles: i32) -> AnalysisKind {
     map_to_searchfox!(Test, Use);
     map_to_searchfox!(Import, Use);
 
-    return AnalysisKind::Use;
+    AnalysisKind::Use
 }
 
 /// Our specifically handled languages for conditional logic.  We currently
@@ -205,6 +205,7 @@ struct SitterNesting {
     root_node_type: Vec<&'static str>,
     name_field: &'static str,
     body_field: &'static str,
+    body_node: &'static str,
 }
 
 lazy_static! {
@@ -215,11 +216,13 @@ lazy_static! {
             root_node_type: vec!["class_definition"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["function_definition"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
     ];
     // our list is manually derived from the tags.scm file:
@@ -229,31 +232,37 @@ lazy_static! {
             root_node_type: vec!["struct_item"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["enum_item"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["union_item"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["function_item"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["trait_item"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["mod_item"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         // TODO macro_definition lacks a body so the body needs to be the parent
         // node maybe?
@@ -264,6 +273,7 @@ lazy_static! {
             root_node_type: vec!["impl_item"],
             name_field: "type",
             body_field: "body",
+            body_node: "",
         },
     ];
     // tree-sitter support for typescript is a little weird because the
@@ -279,6 +289,7 @@ lazy_static! {
             root_node_type: vec!["method_definition"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         // There's an alt over class and class_declaration; class_declaration
         // becomes "class" if we add a "let blah = " ahead of it (and it stops
@@ -287,6 +298,7 @@ lazy_static! {
             root_node_type: vec!["class", "class_declaration"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         // There's also an alt over function/generators
         SitterNesting {
@@ -298,6 +310,7 @@ lazy_static! {
             ],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         // TODO: tags.scm has logic for lexical binds on arrow functions and
         // this is worth considering, although arguably this might also resemble
@@ -317,16 +330,19 @@ lazy_static! {
             root_node_type: vec!["abstract_class_declaration"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["module"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["interface_declaration"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
     ];
     // https://github.com/tree-sitter/tree-sitter-java/blob/master/queries/tags.scm
@@ -335,16 +351,19 @@ lazy_static! {
             root_node_type: vec!["class_declaration"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["method_declaration"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
         SitterNesting {
             root_node_type: vec!["interface_declaration"],
             name_field: "name",
             body_field: "body",
+            body_node: "",
         },
     ];
     // no tags.scm in tree-sitter-kotlin
@@ -352,12 +371,14 @@ lazy_static! {
         SitterNesting {
             root_node_type: vec!["class_declaration"],
             name_field: "name",
-            body_field: "body",
+            body_field: "",
+            body_node: "class_body",
         },
         SitterNesting {
             root_node_type: vec!["function_declaration"],
             name_field: "name",
-            body_field: "body",
+            body_field: "",
+            body_node: "function_body",
         },
     ];
 }
@@ -374,8 +395,8 @@ struct NestedSymbol {
 }
 
 fn compile_nesting_queries(
-    lang: tree_sitter::Language,
-    nesting: &Vec<SitterNesting>,
+    lang: &tree_sitter::Language,
+    nesting: &[SitterNesting],
 ) -> tree_sitter::Query {
     let query_pats: Vec<String> = nesting
         .iter()
@@ -388,8 +409,20 @@ fn compile_nesting_queries(
             }
             for node_type in &ndef.root_node_type {
                 parts.push(format!(
-                    "{}({} {}: (_) @name {}: (_) @body)",
-                    indent, node_type, ndef.name_field, ndef.body_field
+                    "{}({} {}: (_) @name {}({}) @body)",
+                    indent,
+                    node_type,
+                    ndef.name_field,
+                    if !ndef.body_field.is_empty() {
+                        format!("{}: ", ndef.body_field)
+                    } else {
+                        "".to_string()
+                    },
+                    if ndef.body_node.is_empty() {
+                        "_"
+                    } else {
+                        ndef.body_node
+                    }
                 ));
             }
             if ndef.root_node_type.len() > 1 {
@@ -429,18 +462,9 @@ struct SymbolAnalysis {
 
 fn symbol_name(lang_name: &str, subtree_name: Option<&str>, scip_symbol: &str) -> Ustr {
     if let Some(subtree_name) = subtree_name {
-        ustr(&format!(
-            "S_{}_{}_{}",
-            lang_name,
-            subtree_name,
-            scip_symbol
-        ))
+        ustr(&format!("S_{}_{}_{}", lang_name, subtree_name, scip_symbol))
     } else {
-        ustr(&format!(
-            "S_{}_{}",
-            lang_name,
-            scip_symbol
-        ))
+        ustr(&format!("S_{}_{}", lang_name, scip_symbol))
     }
 }
 
@@ -451,8 +475,8 @@ fn analyse_symbol(
     subtree_name: Option<&str>,
     relative_path: &str,
     doc_name: Option<&str>,
-    doc_namespace: Option<&str>)
--> SymbolAnalysis {
+    doc_namespace: Option<&str>,
+) -> SymbolAnalysis {
     let mut pretty_pieces = vec![];
     let mut sym_pieces = vec![];
     let mut last_kind = None;
@@ -480,8 +504,7 @@ fn analyse_symbol(
         };
         let escaped = sanitize_symbol(&descriptor.name);
 
-        let (sym_piece, pretty_action, maybe_kind, contributes_to_parent) = match suffix
-        {
+        let (sym_piece, pretty_action, maybe_kind, contributes_to_parent) = match suffix {
             // Confusingly, package is deprecated in favor of
             // namespace, but right now the SCIP crate parses '/'
             // as Package, not Namespace.
@@ -587,9 +610,7 @@ fn analyse_symbol(
             }
             // Suffix::UnspecifiedSuffix is not possible because we
             // excluded it above, but rust doesn't know that.
-            Suffix::UnspecifiedSuffix => {
-                ("".to_owned(), PrettyAction::Omit, None, false)
-            }
+            Suffix::UnspecifiedSuffix => ("".to_owned(), PrettyAction::Omit, None, false),
         };
         prev_kind = last_kind;
         last_kind = maybe_kind;
@@ -639,7 +660,11 @@ fn analyse_symbol(
 
     // Infer a parent sym if it seems to be a slice
     let parent_sym = if prev_kind == Some("class") && sym_pieces.len() >= 2 {
-        Some(symbol_name(lang_name, subtree_name, &sym_pieces[..sym_pieces.len() - 1].join("")))
+        Some(symbol_name(
+            lang_name,
+            subtree_name,
+            &sym_pieces[..sym_pieces.len() - 1].join(""),
+        ))
     } else {
         None
     };
@@ -669,8 +694,13 @@ fn analyze_using_scip(
     let mut file = protobuf::CodedInputStream::from_buf_read(&mut file);
     let index = Index::parse_from(&mut file).expect("Failed to read scip index");
 
-    let mut scip_symbol_to_structured: HashMap<String, AnalysisStructured> = HashMap::new();
-    let mut our_symbol_to_scip_sym: UstrMap<String> = UstrMap::default();
+    let mut scip_symbol_to_structured: UstrMap<AnalysisStructured> = UstrMap::default();
+    let mut our_symbol_to_scip_sym: UstrMap<Ustr> = UstrMap::default();
+    // When walking the relationship edges for doc.symbols we may learn about
+    // superclasses or overridden methods that we never receive more information
+    // for.  (For example. JDK and AndroidX classes.)  We keep track of these so
+    // we can generate best-effort structured representations for these cases.
+    let mut possible_unknown_scip_symbols: UstrMap<SymbolAnalysis> = UstrMap::default();
 
     let (lang_name, lang) = match index.metadata.tool_info.name.as_str() {
         "rust-analyzer" => ("rs", ScipLang::Rust),
@@ -700,20 +730,6 @@ fn analyze_using_scip(
             "Processing symbols/definitions for '{}'",
             &doc.relative_path,
         );
-
-        // XXX next steps
-        // finish up the loop before to populate the structured things:
-        // - was thinking we just re-derive the descriptor string ourselves as
-        //   we go and we hold onto the previous state of the derived string so
-        //   that we can do the parent lookup for fields/methods.
-        // - the previous descriptor isn't particularly useful because it's
-        //   always going to be a type.
-        // - extra things:
-        //   - we do want to handle the relationship
-        //   - it could be good to have a basic approach for the documentation
-        //     - for rust that does give us size and alignment which is nice
-        //     - for JS we get the inferred type as well, plus the extracted
-        //       comment as a second string after the type info.
 
         for scip_sym_info in &doc.symbols {
             // Process each symbol to:
@@ -836,11 +852,11 @@ fn analyze_using_scip(
                 let mut symbol_info = analyse_symbol(
                     &scip_sym,
                     &lang,
-                    &lang_name,
+                    lang_name,
                     subtree_name,
                     &doc.relative_path,
                     doc_name.as_deref(),
-                    doc_namespace.as_deref()
+                    doc_namespace.as_deref(),
                 );
 
                 let mut supers = vec![];
@@ -857,11 +873,11 @@ fn analyze_using_scip(
                     let parent_symbol_info = analyse_symbol(
                         &rel_scip_sym,
                         &lang,
-                        &lang_name,
+                        lang_name,
                         subtree_name,
                         &doc.relative_path,
                         None,
-                        None
+                        None,
                     );
 
                     // If our symbol is a local (or if we failed to unwrap its kind for any reason),
@@ -884,6 +900,13 @@ fn analyze_using_scip(
                         }
                         _ => {}
                     }
+                    // Add this symbol to consideration for needing a fake structured rep generated
+                    // if we don't already know about it.  (We will also remove things from the map
+                    // as we add entries to scip_symbol_to_structured.)
+                    let urel_sym = ustr(&rel.symbol);
+                    if !scip_symbol_to_structured.contains_key(&urel_sym) {
+                        possible_unknown_scip_symbols.insert(urel_sym, parent_symbol_info);
+                    }
                 }
 
                 // Ensure that supers and overrides are sorted to avoid flaky tests
@@ -905,6 +928,7 @@ fn analyze_using_scip(
                     } else {
                         None
                     },
+                    alignment_bytes: None,
                     own_vf_ptr_bytes: None,
                     binding_slots: vec![],
                     ontology_slots: vec![],
@@ -924,11 +948,15 @@ fn analyze_using_scip(
                 // for local symbols we use our own symbol because the SCIP symbol is not
                 // actually unique; we also need to update our helper mapping.
                 if scip_sym_info.symbol.starts_with("local ") {
-                    scip_symbol_to_structured.insert(symbol_info.norm_sym.to_string(), structured);
-                    our_symbol_to_scip_sym.insert(symbol_info.norm_sym, symbol_info.norm_sym.to_string());
+                    scip_symbol_to_structured.insert(symbol_info.norm_sym, structured);
+                    // I don't think there should potentially be such a key, but there's no harm.
+                    possible_unknown_scip_symbols.remove(&symbol_info.norm_sym);
+                    our_symbol_to_scip_sym.insert(symbol_info.norm_sym, symbol_info.norm_sym);
                 } else {
-                    scip_symbol_to_structured.insert(scip_sym_info.symbol.clone(), structured);
-                    our_symbol_to_scip_sym.insert(symbol_info.norm_sym, scip_sym_info.symbol.clone());
+                    let usym = ustr(&scip_sym_info.symbol);
+                    scip_symbol_to_structured.insert(usym, structured);
+                    possible_unknown_scip_symbols.remove(&usym);
+                    our_symbol_to_scip_sym.insert(symbol_info.norm_sym, usym);
                 }
 
                 if symbol_info.contributes_to_parent {
@@ -948,6 +976,7 @@ fn analyze_using_scip(
                                     }
                                     Some("field") => {
                                         pstruct.fields.push(StructuredFieldInfo {
+                                            line_range: ustr(""),
                                             pretty: symbol_info.pretty,
                                             sym: symbol_info.norm_sym,
                                             type_pretty: type_pretty.unwrap_or_else(|| ustr("")),
@@ -983,6 +1012,10 @@ fn analyze_using_scip(
         None => "analysis".to_string(),
         Some(platform) => format!("analysis-{}", platform),
     });
+
+    // We keep track of what SCIP symbols we have emitted structured records
+    // for so we can emit what's leftover at the end.
+    let mut emitted_scip_structured: UstrSet = UstrSet::default();
 
     for doc in &index.documents {
         let searchfox_path = Path::new(&doc.relative_path).to_owned();
@@ -1024,49 +1057,31 @@ fn analyze_using_scip(
         // basis.  We should revisit this if profiling shows this is a big problem.
         // Same thing with Java and Kotlin
         let mut parser = tree_sitter::Parser::new();
-        let ts_query = match &lang {
-            ScipLang::Python => {
-                parser
-                    .set_language(tree_sitter_python::language())
-                    .expect("Error loading Python grammar");
-                compile_nesting_queries(tree_sitter_python::language(), &PYTHON_NESTING)
-            }
-            ScipLang::Rust => {
-                parser
-                    .set_language(tree_sitter_rust::language())
-                    .expect("Error loading Rust grammar");
-                compile_nesting_queries(tree_sitter_rust::language(), &RUST_NESTING)
-            }
+        let (ts_lang, ts_nesting): (tree_sitter::Language, &Vec<SitterNesting>) = match &lang {
+            ScipLang::Python => (tree_sitter_python::LANGUAGE.into(), &PYTHON_NESTING),
+            ScipLang::Rust => (tree_sitter_rust::LANGUAGE.into(), &RUST_NESTING),
             ScipLang::Typescript => {
                 if doc.relative_path.ends_with(".tsx") || doc.relative_path.ends_with(".jsx") {
-                    parser
-                        .set_language(tree_sitter_typescript::language_tsx())
-                        .expect("Error loading TSX grammar");
-                    compile_nesting_queries(tree_sitter_typescript::language_tsx(), &JS_NESTING)
+                    (tree_sitter_typescript::LANGUAGE_TSX.into(), &JS_NESTING)
                 } else {
-                    parser
-                        .set_language(tree_sitter_typescript::language_typescript())
-                        .expect("Error loading Typescript grammar");
-                    compile_nesting_queries(
-                        tree_sitter_typescript::language_typescript(),
+                    (
+                        tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
                         &JS_NESTING,
                     )
                 }
             }
             ScipLang::Jvm => {
                 if doc.relative_path.ends_with(".kt") {
-                    parser
-                        .set_language(tree_sitter_kotlin::language())
-                        .expect("Error loading Kotlin grammar");
-                    compile_nesting_queries(tree_sitter_kotlin::language(), &KOTLIN_NESTING)
+                    (tree_sitter_kotlin_ng::LANGUAGE.into(), &KOTLIN_NESTING)
                 } else {
-                    parser
-                        .set_language(tree_sitter_java::language())
-                        .expect("Error loading Java grammar");
-                    compile_nesting_queries(tree_sitter_java::language(), &JAVA_NESTING)
+                    (tree_sitter_java::LANGUAGE.into(), &JAVA_NESTING)
                 }
             }
         };
+        parser
+            .set_language(&ts_lang)
+            .expect("Error loading grammar");
+        let ts_query = compile_nesting_queries(&ts_lang, ts_nesting);
         let name_capture_ix = ts_query.capture_index_for_name("name").unwrap();
         let body_capture_ix = ts_query.capture_index_for_name("body").unwrap();
 
@@ -1106,22 +1121,40 @@ fn analyze_using_scip(
                     symbol_name(
                         lang_name,
                         subtree_name,
-                        &format!("{}/#{}", sanitize_symbol(&doc.relative_path), &occurrence.symbol[6..])
+                        &format!(
+                            "{}/#{}",
+                            sanitize_symbol(&doc.relative_path),
+                            &occurrence.symbol[6..]
+                        ),
                     ),
                 )
             } else {
                 (false, ustr(&occurrence.symbol))
             };
 
-            let sinfo = match scip_symbol_to_structured.get(norm_scip_sym.as_str()) {
+            let sinfo = match scip_symbol_to_structured.get(&norm_scip_sym) {
                 Some(s) => s,
                 None => {
                     // For occurences that don't match any symbol, we create a new structured fake,
                     // save it, and return it.
 
-                    let symbol = scip::symbol::parse_symbol(&occurrence.symbol).unwrap();
+                    let symbol = match scip::symbol::parse_symbol(&occurrence.symbol) {
+                        Ok(s) => s,
+                        Err(e) => {
+                            error!("{:?}", e);
+                            continue;
+                        }
+                    };
 
-                    let symbol_info = analyse_symbol(&symbol, &lang, lang_name, subtree_name, &doc.relative_path, None, None);
+                    let symbol_info = analyse_symbol(
+                        &symbol,
+                        &lang,
+                        lang_name,
+                        subtree_name,
+                        &doc.relative_path,
+                        None,
+                        None,
+                    );
 
                     let fake = AnalysisStructured {
                         structured: StructuredTag::Structured,
@@ -1132,8 +1165,13 @@ fn analyze_using_scip(
                         subsystem: None,
                         parent_sym: symbol_info.parent_sym,
                         slot_owner: None,
-                        impl_kind: ustr("impl"),
+                        // Introducing the concept of "external" here to make it
+                        // more obvious when we generate a fake structured
+                        // record and that it is missing much of the expected
+                        // metadata.
+                        impl_kind: ustr("external"),
                         size_bytes: None,
+                        alignment_bytes: None,
                         own_vf_ptr_bytes: None,
                         binding_slots: vec![],
                         ontology_slots: vec![],
@@ -1150,9 +1188,10 @@ fn analyze_using_scip(
                         variants: vec![],
                         extra: Map::default(),
                     };
-                    scip_symbol_to_structured.insert(norm_scip_sym.to_owned(), fake);
-                    our_symbol_to_scip_sym.insert(symbol_info.norm_sym, norm_scip_sym.to_owned());
-                    scip_symbol_to_structured.get(norm_scip_sym.as_str()).unwrap()
+                    scip_symbol_to_structured.insert(norm_scip_sym, fake);
+                    possible_unknown_scip_symbols.remove(&norm_scip_sym);
+                    our_symbol_to_scip_sym.insert(symbol_info.norm_sym, norm_scip_sym);
+                    scip_symbol_to_structured.get(&norm_scip_sym).unwrap()
                 }
             };
             let loc = scip_range_to_searchfox_location(&occurrence.range);
@@ -1241,8 +1280,8 @@ fn analyze_using_scip(
                 // line.  format.rs handles this and we similarly require any
                 // other consumers to handle this.
                 Some(NestedSymbol {
-                    sym: sinfo.sym.clone(),
-                    pretty: sinfo.pretty.clone(),
+                    sym: sinfo.sym,
+                    pretty: sinfo.pretty,
                     nesting_range: next_parse_nesting.clone(),
                 })
             } else {
@@ -1254,14 +1293,14 @@ fn analyze_using_scip(
             {
                 let mut syntax = vec![kind.to_ustr()];
                 if !sinfo.kind.is_empty() {
-                    syntax.push(sinfo.kind.clone());
+                    syntax.push(sinfo.kind);
                 }
                 let source_data = WithLocation {
                     data: AnalysisSource {
                         source: SourceTag::Source,
                         syntax,
                         pretty: ustr(&format!("{} {}", sinfo.kind, sinfo.pretty)),
-                        sym: vec![sinfo.sym.clone()],
+                        sym: vec![sinfo.sym],
                         no_crossref,
                         nesting_range: if let Some(nest) = &starts_nest {
                             nest.nesting_range.clone()
@@ -1269,9 +1308,11 @@ fn analyze_using_scip(
                             SourceRange::default()
                         },
                         // TODO: Expose type information for fields/etc.
-                        type_pretty: sinfo.type_pretty.clone(),
+                        type_pretty: sinfo.type_pretty,
                         type_sym: None,
                         arg_ranges: vec![],
+                        expansion_info: None,
+                        confidence: None,
                     },
                     loc,
                 };
@@ -1280,20 +1321,15 @@ fn analyze_using_scip(
 
             // If this was the definition point, then write out the structured record.
             if kind == AnalysisKind::Def {
-                write_line(
-                    &mut file,
-                    &WithLocation {
-                        data: sinfo,
-                        loc,
-                    },
-                );
+                emitted_scip_structured.insert(norm_scip_sym);
+                write_line(&mut file, &WithLocation { data: sinfo, loc });
             }
 
             // TODO: Contextual info.
 
             if !no_crossref {
                 let (contextsym, context) = if let Some(nested) = nesting_stack.last() {
-                    (nested.sym.clone(), nested.pretty.clone())
+                    (nested.sym, nested.pretty)
                 } else {
                     (ustr(""), ustr(""))
                 };
@@ -1302,8 +1338,8 @@ fn analyze_using_scip(
                     data: AnalysisTarget {
                         target: TargetTag::Target,
                         kind,
-                        pretty: sinfo.pretty.clone(),
-                        sym: sinfo.sym.clone(),
+                        pretty: sinfo.pretty,
+                        sym: sinfo.sym,
                         context,
                         contextsym,
                         peek_range: LineRange {
@@ -1312,7 +1348,7 @@ fn analyze_using_scip(
                         },
                         arg_ranges: vec![],
                     },
-                    loc: loc.clone(),
+                    loc,
                 };
                 write_line(&mut file, &target_data);
             }
@@ -1321,6 +1357,81 @@ fn analyze_using_scip(
             // and this avoids any consultations of the stack above.
             if let Some(nested) = starts_nest {
                 nesting_stack.push(nested);
+            }
+        }
+    }
+
+    // ## Create fake structured records for any remaining unknown scip symbols
+    for symbol_info in possible_unknown_scip_symbols.into_values() {
+        let fake = AnalysisStructured {
+            structured: StructuredTag::Structured,
+            pretty: symbol_info.pretty,
+            sym: symbol_info.norm_sym,
+            type_pretty: None,
+            kind: ustr(symbol_info.kind.unwrap_or("")),
+            subsystem: None,
+            parent_sym: symbol_info.parent_sym,
+            slot_owner: None,
+            // (see previous use above for more context)
+            impl_kind: ustr("external"),
+            size_bytes: None,
+            alignment_bytes: None,
+            own_vf_ptr_bytes: None,
+            binding_slots: vec![],
+            ontology_slots: vec![],
+            supers: vec![],
+            methods: vec![],
+            fields: vec![],
+            overrides: vec![],
+            props: vec![],
+            labels: BTreeSet::default(),
+
+            idl_sym: None,
+            subclass_syms: vec![],
+            overridden_by_syms: vec![],
+            variants: vec![],
+            extra: Map::default(),
+        };
+        scip_symbol_to_structured.insert(symbol_info.norm_sym, fake);
+    }
+
+    // ## Emit any external structured records we didn't already emit
+    {
+        // Let's name the analysis file after the SCIP file.
+        let output_file = analysis_root.join(scip_file.file_name().unwrap());
+        if let Err(err) = create_output_dir(&output_file) {
+            error!(
+                "Couldn't create dir for: {}, {:?}",
+                output_file.display(),
+                err
+            );
+            return;
+        }
+        let mut file = match File::create(&output_file) {
+            Ok(f) => f,
+            Err(err) => {
+                error!(
+                    "Couldn't open output file: {}, {:?}",
+                    output_file.display(),
+                    err
+                );
+                return;
+            }
+        };
+
+        for (scip_sym, sinfo) in scip_symbol_to_structured {
+            if !emitted_scip_structured.contains(&scip_sym) {
+                write_line(
+                    &mut file,
+                    &WithLocation {
+                        data: sinfo,
+                        loc: Location {
+                            lineno: 0,
+                            col_start: 0,
+                            col_end: 0,
+                        },
+                    },
+                );
             }
         }
     }
@@ -1334,10 +1445,16 @@ fn main() {
     let cli = ScipIndexerCli::parse();
 
     let tree_name = &cli.tree_name;
-    let cfg = config::load(&cli.config_file, false, Some(&tree_name));
+    let cfg = config::load(&cli.config_file, false, Some(tree_name), None, None);
     let tree_config = cfg.trees.get(tree_name).unwrap();
 
     for file in cli.inputs {
-        analyze_using_scip(&tree_config, cli.subtree_name.as_deref(), &cli.subtree_root, &cli.platform, file);
+        analyze_using_scip(
+            tree_config,
+            cli.subtree_name.as_deref(),
+            &cli.subtree_root,
+            &cli.platform,
+            file,
+        );
     }
 }

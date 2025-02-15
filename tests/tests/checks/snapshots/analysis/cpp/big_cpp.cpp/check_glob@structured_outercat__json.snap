@@ -4,12 +4,13 @@ expression: "&json_results"
 ---
 [
   {
-    "loc": "00227:6-14",
+    "loc": "00210:6-14",
     "structured": 1,
     "pretty": "outerNS::OuterCat",
     "sym": "T_outerNS::OuterCat",
     "kind": "class",
     "sizeBytes": 40,
+    "alignmentBytes": 8,
     "supers": [
       {
         "sym": "T_outerNS::Thing",
@@ -125,6 +126,7 @@ expression: "&json_results"
     ],
     "fields": [
       {
+        "lineRange": "#224",
         "pretty": "outerNS::OuterCat::mIsFriendly",
         "sym": "F_<T_outerNS::OuterCat>_mIsFriendly",
         "type": "_Bool",
@@ -132,6 +134,7 @@ expression: "&json_results"
         "sizeBytes": 1
       },
       {
+        "lineRange": "#225",
         "pretty": "outerNS::OuterCat::mIsSecretlyUnfriendly",
         "sym": "F_<T_outerNS::OuterCat>_mIsSecretlyUnfriendly",
         "type": "_Bool",
@@ -139,6 +142,7 @@ expression: "&json_results"
         "sizeBytes": 1
       },
       {
+        "lineRange": "#227",
         "pretty": "outerNS::OuterCat::mOwner",
         "sym": "F_<T_outerNS::OuterCat>_mOwner",
         "type": "class std::shared_ptr<class outerNS::Human>",
@@ -147,6 +151,7 @@ expression: "&json_results"
         "sizeBytes": 16
       },
       {
+        "lineRange": "#228",
         "pretty": "outerNS::OuterCat::mFavoriteCouch",
         "sym": "F_<T_outerNS::OuterCat>_mFavoriteCouch",
         "type": "class outerNS::Couch *",

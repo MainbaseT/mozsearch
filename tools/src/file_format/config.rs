@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::fs::{File, self};
+use std::fs::{self, File};
 use std::io::BufReader;
 use std::io::Read;
 use std::str;
@@ -39,6 +39,9 @@ pub struct ConfigJson {
     /// up.
     pub instance_type: Option<String>,
     pub trees: BTreeMap<String, TreeConfigPaths>,
+
+    #[serde(default)]
+    pub allow_webtest: Option<bool>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -127,16 +130,16 @@ pub struct TreeConfig {
 
 impl TreeConfig {
     pub fn get_git(&self) -> Result<&GitData, &'static str> {
-        match &self.git {
-            &Some(ref git) => Ok(git),
-            &None => Err("History data unavailable"),
+        match self.git {
+            Some(ref git) => Ok(git),
+            None => Err("History data unavailable"),
         }
     }
 
     pub fn get_git_path(&self) -> Result<&str, &'static str> {
-        match &self.paths.git_path {
-            &Some(ref git_path) => Ok(git_path),
-            &None => Err("History data unavailable"),
+        match self.paths.git_path {
+            Some(ref git_path) => Ok(git_path),
+            None => Err("History data unavailable"),
         }
     }
 
@@ -147,13 +150,13 @@ impl TreeConfig {
         format!("{}/{}", &self.paths.files_path, path)
     }
 
-    pub fn should_ignore_missing_file(&self, path: &String) -> bool {
+    pub fn should_ignore_missing_file(&self, path: &str) -> bool {
         for prefix in &self.paths.ignore_missing_path_prefixes {
             if path.starts_with(prefix) {
                 return true;
             }
         }
-        return false;
+        false
     }
 }
 
@@ -161,13 +164,19 @@ pub struct Config {
     pub trees: BTreeMap<String, TreeConfig>,
     pub mozsearch_path: String,
     pub config_repo_path: String,
+    // FIXME: Move these to TreeConfig.
+    pub url_map_path: Option<String>,
+    pub doc_trees_path: Option<String>,
 }
 
 impl Config {
     /// Synchronously read the contents of a file in the given tree's config
     /// directory, falling back to `MOZSEARCH/config_defaults/FILENAME` if
     /// available.
-    pub fn read_tree_config_file_with_default(&self, filename: &str) -> Result<String, &'static str> {
+    pub fn read_tree_config_file_with_default(
+        &self,
+        filename: &str,
+    ) -> Result<String, &'static str> {
         let repo_specific_path = format!("{}/{}", self.config_repo_path, filename);
         if let Ok(data_str) = std::fs::read_to_string(repo_specific_path) {
             return Ok(data_str);
@@ -182,7 +191,12 @@ impl Config {
     /// Synchronously attempt to locate and read the contents of the given file
     /// at the given root using the given tree as context.  Documentation on the
     /// roots can be found on `SourceDescriptor`.
-    pub fn maybe_read_file_from_given_root(&self, tree: &str, root: &str, file: &str) -> Result<Option<String>, &'static str> {
+    pub fn maybe_read_file_from_given_root(
+        &self,
+        tree: &str,
+        root: &str,
+        file: &str,
+    ) -> Result<Option<String>, &'static str> {
         let tree = self.trees.get(tree).unwrap();
 
         let path_root = match root {
@@ -204,7 +218,7 @@ impl Config {
                 // dynamic strings, but for these static strings, let's have fun
                 // with how useless this is!
                 _ => Err("some kind of read error I guess"),
-            }
+            },
             _ => Ok(None),
         }
     }
@@ -242,7 +256,13 @@ pub fn index_blame(
     (blame_map, hg_map)
 }
 
-pub fn load(config_path: &str, need_indexes: bool, only_tree: Option<&str>) -> Config {
+pub fn load(
+    config_path: &str,
+    need_indexes: bool,
+    only_tree: Option<&str>,
+    url_map_path: Option<String>,
+    doc_trees_path: Option<String>,
+) -> Config {
     let config_file = File::open(config_path).unwrap();
     let mut reader = BufReader::new(&config_file);
     let mut input = String::new();
@@ -258,12 +278,12 @@ pub fn load(config_path: &str, need_indexes: bool, only_tree: Option<&str>) -> C
         }
 
         let git = match (&paths.git_path, &paths.git_blame_path) {
-            (&Some(ref git_path), &Some(ref git_blame_path)) => {
-                let repo = Repository::open(&git_path).unwrap();
+            (Some(git_path), Some(git_blame_path)) => {
+                let repo = Repository::open(git_path).unwrap();
                 let mailmap = Mailmap::load(&repo);
                 let blame_ignore = BlameIgnoreList::load(&repo);
 
-                let blame_repo = Repository::open(&git_blame_path).unwrap();
+                let blame_repo = Repository::open(git_blame_path).unwrap();
                 let (blame_map, hg_map) = if need_indexes {
                     index_blame(&blame_repo, None)
                 } else {
@@ -271,44 +291,40 @@ pub fn load(config_path: &str, need_indexes: bool, only_tree: Option<&str>) -> C
                 };
 
                 Some(GitData {
-                    repo: repo,
+                    repo,
                     blame_repo: Some(blame_repo),
-                    blame_map: blame_map,
-                    hg_map: hg_map,
-                    mailmap: mailmap,
-                    blame_ignore: blame_ignore,
+                    blame_map,
+                    hg_map,
+                    mailmap,
+                    blame_ignore,
                 })
             }
-            (&Some(ref git_path), &None) => {
-                let repo = Repository::open(&git_path).unwrap();
+            (Some(git_path), &None) => {
+                let repo = Repository::open(git_path).unwrap();
                 let mailmap = Mailmap::load(&repo);
                 let blame_ignore = BlameIgnoreList::load(&repo);
 
                 Some(GitData {
-                    repo: repo,
+                    repo,
                     blame_repo: None,
                     blame_map: HashMap::new(),
                     hg_map: HashMap::new(),
-                    mailmap: mailmap,
-                    blame_ignore: blame_ignore,
+                    mailmap,
+                    blame_ignore,
                 })
             }
             _ => None,
         };
 
-        trees.insert(
-            tree_name,
-            TreeConfig {
-                paths: paths,
-                git: git,
-            },
-        );
+        trees.insert(tree_name, TreeConfig { paths, git });
     }
 
     Config {
         trees,
         mozsearch_path: config.mozsearch_path,
         config_repo_path: config.config_repo,
+        url_map_path,
+        doc_trees_path,
     }
 }
 
@@ -331,7 +347,7 @@ impl Mailmap {
 
         // Try to look up with both name & email.
         let mut key = MailmapKey(Some(name.to_owned()), Some(email.to_owned()));
-        if let Some(&MailmapKey(ref new_name, ref new_email)) = self.entries.get(&key) {
+        if let Some(MailmapKey(new_name, new_email)) = self.entries.get(&key) {
             return (
                 new_name.as_ref().map(String::as_str).unwrap_or(name),
                 new_email.as_ref().map(String::as_str).unwrap_or(email),
@@ -340,7 +356,7 @@ impl Mailmap {
 
         // Try looking up only by email.
         key.0 = None;
-        if let Some(&MailmapKey(ref new_name, ref new_email)) = self.entries.get(&key) {
+        if let Some(MailmapKey(new_name, new_email)) = self.entries.get(&key) {
             return (
                 new_name.as_ref().map(String::as_str).unwrap_or(name),
                 new_email.as_ref().map(String::as_str).unwrap_or(email),

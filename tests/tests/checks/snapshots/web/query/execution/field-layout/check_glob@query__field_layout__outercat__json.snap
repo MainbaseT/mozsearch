@@ -19,6 +19,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_outerNS::OuterCat",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -30,7 +31,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#245"
+            "def": "big_cpp.cpp#228"
           }
         },
         "F_<T_outerNS::OuterCat>_mIsFriendly": {
@@ -46,6 +47,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_outerNS::OuterCat",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -57,7 +59,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#241"
+            "def": "big_cpp.cpp#224"
           }
         },
         "F_<T_outerNS::OuterCat>_mIsSecretlyUnfriendly": {
@@ -73,6 +75,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_outerNS::OuterCat",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -84,7 +87,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#242"
+            "def": "big_cpp.cpp#225"
           }
         },
         "F_<T_outerNS::OuterCat>_mOwner": {
@@ -100,6 +103,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_outerNS::OuterCat",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -111,7 +115,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#244"
+            "def": "big_cpp.cpp#227"
           }
         },
         "F_<T_outerNS::Thing>_mDefunct": {
@@ -127,6 +131,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_outerNS::Thing",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -138,7 +143,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#151"
+            "def": "big_cpp.cpp#146"
           }
         },
         "F_<T_outerNS::Thing>_mHP": {
@@ -154,6 +159,7 @@ expression: "&to_value(sttl).unwrap()"
             "parentsym": "T_outerNS::Thing",
             "implKind": "",
             "sizeBytes": null,
+            "alignmentBytes": null,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -165,7 +171,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#147"
+            "def": "big_cpp.cpp#142"
           }
         },
         "T_outerNS::Couch": {
@@ -180,6 +186,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": "Core/Big",
             "implKind": "",
             "sizeBytes": 16,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -234,7 +241,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#211"
+            "def": "big_cpp.cpp#196"
           }
         },
         "T_outerNS::Human": {
@@ -249,6 +256,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": "Core/Big",
             "implKind": "",
             "sizeBytes": 16,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -326,7 +334,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#185"
+            "def": "big_cpp.cpp#178"
           }
         },
         "T_outerNS::OuterCat": {
@@ -341,6 +349,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": "Core/Big",
             "implKind": "",
             "sizeBytes": 40,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": null,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -472,6 +481,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#224",
                 "pretty": "outerNS::OuterCat::mIsFriendly",
                 "sym": "F_<T_outerNS::OuterCat>_mIsFriendly",
                 "type": "_Bool",
@@ -481,6 +491,7 @@ expression: "&to_value(sttl).unwrap()"
                 "sizeBytes": 1
               },
               {
+                "lineRange": "#225",
                 "pretty": "outerNS::OuterCat::mIsSecretlyUnfriendly",
                 "sym": "F_<T_outerNS::OuterCat>_mIsSecretlyUnfriendly",
                 "type": "_Bool",
@@ -490,6 +501,7 @@ expression: "&to_value(sttl).unwrap()"
                 "sizeBytes": 1
               },
               {
+                "lineRange": "#227",
                 "pretty": "outerNS::OuterCat::mOwner",
                 "sym": "F_<T_outerNS::OuterCat>_mOwner",
                 "type": "class std::shared_ptr<class outerNS::Human>",
@@ -508,6 +520,7 @@ expression: "&to_value(sttl).unwrap()"
                 ]
               },
               {
+                "lineRange": "#228",
                 "pretty": "outerNS::OuterCat::mFavoriteCouch",
                 "sym": "F_<T_outerNS::OuterCat>_mFavoriteCouch",
                 "type": "class outerNS::Couch *",
@@ -534,7 +547,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#227"
+            "def": "big_cpp.cpp#210"
           }
         },
         "T_outerNS::Thing": {
@@ -549,6 +562,7 @@ expression: "&to_value(sttl).unwrap()"
             "subsystem": "Core/Big",
             "implKind": "",
             "sizeBytes": 16,
+            "alignmentBytes": 8,
             "ownVFPtrBytes": 8,
             "bindingSlots": [],
             "ontologySlots": [],
@@ -632,6 +646,7 @@ expression: "&to_value(sttl).unwrap()"
             ],
             "fields": [
               {
+                "lineRange": "#142",
                 "pretty": "outerNS::Thing::mHP",
                 "sym": "F_<T_outerNS::Thing>_mHP",
                 "type": "int",
@@ -641,6 +656,7 @@ expression: "&to_value(sttl).unwrap()"
                 "sizeBytes": 4
               },
               {
+                "lineRange": "#146",
                 "pretty": "outerNS::Thing::mDefunct",
                 "sym": "F_<T_outerNS::Thing>_mDefunct",
                 "type": "_Bool",
@@ -661,7 +677,7 @@ expression: "&to_value(sttl).unwrap()"
             "variants": []
           },
           "jumps": {
-            "def": "big_cpp.cpp#141"
+            "def": "big_cpp.cpp#136"
           }
         },
         "T_std::shared_ptr": {
@@ -676,6 +692,13 @@ expression: "&to_value(sttl).unwrap()"
         {
           "name": "outerNS::OuterCat",
           "symbols": "T_outerNS::OuterCat",
+          "isBaseClass": false,
+          "alignmentAndSize": [
+            {
+              "alignment": "align(8)",
+              "size": "40"
+            }
+          ],
           "items": [
             {
               "Field": {
@@ -686,6 +709,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "_Bool",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_reserved\" >bool</span> <span class=\"syn_def\" data-symbols=\"F_<T_outerNS::OuterCat>_mIsFriendly\" data-confidences=\"[&quot;concrete&quot;]\">mIsFriendly</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -704,6 +730,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "_Bool",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_reserved\" >bool</span> <span class=\"syn_def\" data-symbols=\"F_<T_outerNS::OuterCat>_mIsSecretlyUnfriendly\" data-confidences=\"[&quot;concrete&quot;]\">mIsSecretlyUnfriendly</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -728,6 +757,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": "T_std::shared_ptr,T_outerNS::Human"
                   }
                 ],
+                "lines": [
+                  "  std::<span class=\"syn_type\" data-symbols=\"T_std::shared_ptr\" data-confidences=\"[&quot;concrete&quot;]\">shared_ptr</span>&lt;<span class=\"syn_type\" data-symbols=\"T_outerNS::Human\" data-confidences=\"[&quot;concrete&quot;]\">Human</span>> <span class=\"syn_def\" data-symbols=\"F_<T_outerNS::OuterCat>_mOwner\" data-confidences=\"[&quot;concrete&quot;]\">mOwner</span>;"
+                ],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x10",
@@ -746,6 +778,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": "T_outerNS::Couch"
                   }
                 ],
+                "lines": [
+                  "  <span class=\"syn_type\" data-symbols=\"T_outerNS::Couch\" data-confidences=\"[&quot;concrete&quot;]\">Couch</span>* <span class=\"syn_def\" data-symbols=\"F_<T_outerNS::OuterCat>_mFavoriteCouch\" data-confidences=\"[&quot;concrete&quot;]\">mFavoriteCouch</span>;"
+                ],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x20",
@@ -757,8 +792,10 @@ expression: "&to_value(sttl).unwrap()"
           ]
         },
         {
-          "name": "outerNS::Thing (base class)",
+          "name": "outerNS::Thing",
           "symbols": "T_outerNS::Thing",
+          "isBaseClass": true,
+          "alignmentAndSize": [],
           "items": [
             {
               "Field": {
@@ -770,6 +807,7 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0x0",
@@ -787,6 +825,9 @@ expression: "&to_value(sttl).unwrap()"
                     "name": "int",
                     "symbols": ""
                   }
+                ],
+                "lines": [
+                  "  <span class=\"syn_reserved\" >int</span> <span class=\"syn_def\" data-symbols=\"F_<T_outerNS::Thing>_mHP\" data-confidences=\"[&quot;concrete&quot;]\">mHP</span>;"
                 ],
                 "offsetAndSize": [
                   {
@@ -806,6 +847,9 @@ expression: "&to_value(sttl).unwrap()"
                     "symbols": ""
                   }
                 ],
+                "lines": [
+                  "  <span class=\"syn_reserved\" >bool</span> <span class=\"syn_def\" data-symbols=\"F_<T_outerNS::Thing>_mDefunct\" data-confidences=\"[&quot;concrete&quot;]\">mDefunct</span>;"
+                ],
                 "offsetAndSize": [
                   {
                     "offset": "@ 0xc",
@@ -818,5 +862,6 @@ expression: "&to_value(sttl).unwrap()"
         }
       ]
     }
-  ]
+  ],
+  "className": null
 }

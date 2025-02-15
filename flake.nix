@@ -8,9 +8,14 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, fenix }: (
-    flake-utils.lib.eachDefaultSystem (system:
-      let
+  outputs = {
+    self,
+    nixpkgs,
+    flake-utils,
+    fenix,
+  }: (
+    flake-utils.lib.eachDefaultSystem (
+      system: let
         pkgs = nixpkgs.legacyPackages.${system}.extend fenix.overlays.default;
 
         rustToolchain = pkgs.fenix.stable.toolchain;
@@ -21,10 +26,11 @@
           ln -s ${pkgs.podman}/bin/podman $out/bin/docker
         '';
 
-        pythonPackages = p: with p; [
-          boto3
-          rich
-        ];
+        pythonPackages = p:
+          with p; [
+            boto3
+            rich
+          ];
       in {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
@@ -33,16 +39,16 @@
 
             # Those are probably not all required, copied from
             # https://gist.github.com/adisbladis/187204cb772800489ee3dac4acdd9947
-            runc  # Container runtime
-            conmon  # Container runtime monitor
-            skopeo  # Interact with container registry
-            slirp4netns  # User-mode networking for unprivileged namespaces
-            fuse-overlayfs  # CoW for images, much faster than default vfs
+            runc # Container runtime
+            conmon # Container runtime monitor
+            skopeo # Interact with container registry
+            slirp4netns # User-mode networking for unprivileged namespaces
+            fuse-overlayfs # CoW for images, much faster than default vfs
 
             jq
 
-            awscli2
             (python3.withPackages pythonPackages)
+            awscli2
 
             # Dependencies required to build tools
             rustToolchain
@@ -50,15 +56,20 @@
             cmake
             pkg-config
 
+            # Must be before (unwrapped) clang in path
+            clang-tools_19
+
             # Dependencies required to build clang-plugin
-            # Update to llvmPackages_17 when available
-            clang
-            llvmPackages_16.libllvm
-            llvmPackages_16.libclang
+            clang_19
+            llvmPackages_19.libllvm
+            llvmPackages_19.libclang
+
+            gdb
 
             scip
             protobuf
-            clang-tools_16
+
+            pre-commit
           ];
 
           PODMAN_USERNS = "keep-id";
@@ -73,6 +84,8 @@
             echo "- open http://localhost:16995 in a browser"
           '';
         };
+
+        formatter = pkgs.alejandra;
       }
     )
   );

@@ -4,11 +4,13 @@ set -x # Show commands
 set -eu # Errors/undefined vars are fatal
 set -o pipefail # Check all commands in a pipeline
 
+MOZSEARCH_REPO="${MOZSEARCH_REPO:-https://github.com/mozsearch/mozsearch}"
+MOZSEARCH_BRANCH="${MOZSEARCH_BRANCH:-master}"
+MOZSEARCH_CONFIG_REPO="${MOZSEARCH_CONFIG_REPO:-https://github.com/mozsearch/mozsearch-mozilla}"
+MOZSEARCH_CONFIG_BRANCH="${MOZSEARCH_CONFIG_BRANCH:-master}"
+
 # Install zlib.h (needed for NSS build)
 sudo apt-get install -y zlib1g-dev
-
-# Install python2 and six (needed for cinnabar and idl-analyze.py)
-sudo apt-get install -y python2.7 python-six
 
 # Building LLVM likes to have ninja; pernosco also can use it if we ever index that.
 sudo apt-get install -y ninja-build
@@ -20,33 +22,23 @@ sudo apt-get install -y ninja-build
 # the update process.
 cargo install cargo-insta
 
-# To help install node.js and similar, we install mise, a rust-based "asdf"
-# alternative, which if you don't know what "asdf" is, but know what "nvm" is,
-# it's basically a super-nvm for multiple languages, etc.  We use the install
-# method documented at https://mise.jdx.dev/getting-started.html#cargo but there
-# are a bunch of other options.
-#
-# The core rationale here is that I've locally been using "nvm" for node.js
-# purposes for a while now and it's been a much better experience than trying to
-# use debian/ubuntu distro-provided versions of node, and in particular can be
-# invaluable when trying to just get things to work when packages are involved
-# that may involve native modules/libraries which can make it hard to uniformly
-# use the latest revision.  I'm somewhat hopeful that
-cargo install mise
-
-# Install node.js v18 for scip-typescript
-mise install nodejs@18
+# Install node.js for scip-typescript; github lists v18 and v20 as supported;
+# we are sticking with v18 for now because currently all the invocations
+# hardcode v18 as well; that will need to be addressed.
+sudo apt install -y npm
 
 # Install scip-typescript under node.js v18
-mise exec nodejs@18 -- npm install -g @sourcegraph/scip-typescript
+sudo npm install -g @sourcegraph/scip-typescript
 
 # Install scip-python under node.js v18 as well
-#mise exec nodejs@18 -- npm install -g @sourcegraph/scip-python
+#npm install -g @sourcegraph/scip-python
 # To get my fix https://github.com/sourcegraph/scip-python/pull/150
-mise exec nodejs@18 -- npm install -g @asutherland/scip-python
+sudo npm install -g @asutherland/scip-python
 
 # Install a JDK and Coursier.
-sudo apt install -y openjdk-19-jdk
+# v21 is currently the most recent available version of Ubuntu 24.04 (and v19 was
+# removed).
+sudo apt install -y openjdk-21-jdk
 curl -fL "https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux.gz" | gzip -d > cs
 chmod +x cs
 ./cs setup --yes
@@ -55,6 +47,7 @@ PATH="$PATH:$HOME/.local/share/coursier/bin"
 
 # Install scip-java
 cs install --contrib scip-java
+rm -rf ~/.cache/coursier
 
 # Create update script.
 cat > update.sh <<"THEEND"
@@ -64,38 +57,39 @@ set -x # Show commands
 set -eu # Errors/undefined vars are fatal
 set -o pipefail # Check all commands in a pipeline
 
-exec &> update-log
+exec > >(tee -a update-log) 2>&1
 
 date
 
-if [ $# != 3 ]
+if [ $# != 4 ]
 then
-    echo "usage: $0 <branch> <mozsearch-repo> <config-repo>"
+    echo "usage: $0 <mozsearch-repo> <mozsearch-rev> <config-repo> <config-rev>"
     exit 1
 fi
 
-BRANCH=$1
-MOZSEARCH_REPO=$2
+MOZSEARCH_REPO=$1
+MOZSEARCH_REV=$2
 CONFIG_REPO=$3
+CONFIG_REV=$4
 
-echo Branch is $BRANCH
-echo Mozsearch repository is $MOZSEARCH_REPO
-echo Config repository is $CONFIG_REPO
+echo Mozsearch repository is $MOZSEARCH_REPO rev $MOZSEARCH_REV
+echo Config repository is $CONFIG_REPO rev $CONFIG_REV
 
 # Install mozsearch.
 rm -rf mozsearch
-git clone -b $BRANCH $MOZSEARCH_REPO mozsearch
+mkdir mozsearch
 pushd mozsearch
+git init
+git remote add origin "$MOZSEARCH_REPO"
+git fetch origin "$MOZSEARCH_REV"
+git switch --detach FETCH_HEAD
 git submodule init
 git submodule update
 popd
 
 # Install files from the config repo.
 rm -rf config
-git clone $CONFIG_REPO config
-pushd config
-git checkout $BRANCH -- || true
-popd
+git clone -b $CONFIG_REV $CONFIG_REPO config --depth=1
 
 date
 
@@ -116,10 +110,10 @@ chmod +x update.sh
 # this really is just:
 # - Validating the image can compile and use rust and clang correctly.
 # - Caching some crates in `~/.cargo`.
-./update.sh master https://github.com/mozsearch/mozsearch https://github.com/mozsearch/mozsearch-mozilla
+./update.sh "$MOZSEARCH_REPO" "$MOZSEARCH_BRANCH" "$MOZSEARCH_CONFIG_REPO" "$MOZSEARCH_CONFIG_BRANCH"
 mv update-log provision-update-log-1
 
 # Run this a second time to make sure the script is actually idempotent, so we
 # don't have any surprises when the update script gets run when the VM spins up.
-./update.sh master https://github.com/mozsearch/mozsearch https://github.com/mozsearch/mozsearch-mozilla
+./update.sh "$MOZSEARCH_REPO" "$MOZSEARCH_BRANCH" "$MOZSEARCH_CONFIG_REPO" "$MOZSEARCH_CONFIG_BRANCH"
 mv update-log provision-update-log-2

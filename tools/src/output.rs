@@ -1,13 +1,12 @@
 /**
- * Common rust HTML output logic.  Note that any changes in this file potentially require changes
- * to `scripts/output.js` which includes hard-coded HTML that needs to logically be equivalent to
- * what's in this file.
+ * Common rust HTML output logic.
  **/
 use std::io::Write;
 use std::path::Path;
 
 extern crate chrono;
 use crate::file_format::analysis_manglings::make_file_sym_from_path;
+use crate::url_encode_path::url_encode_path;
 
 use self::chrono::{DateTime, Local};
 
@@ -40,7 +39,7 @@ pub fn choose_icon(path: &str) -> String {
 }
 
 pub fn file_url(opt: &Options, path: &str) -> String {
-    format!("/{}/source/{}", opt.tree_name, path)
+    format!("/{}/source/{}", opt.tree_name, url_encode_path(path))
 }
 
 pub fn generate_breadcrumbs(
@@ -51,16 +50,22 @@ pub fn generate_breadcrumbs(
 ) -> Result<(), &'static str> {
     let mut breadcrumbs = format!("<a href=\"{}\">{}</a>", file_url(opt, ""), opt.tree_name);
 
+    breadcrumbs.push_str(r#"<button id="tree-switcher" title="Open tree switcher menu" aria-expanded="false" aria-haspopup="true" aria-controls="tree-switcher-menu"></button>"#);
+    breadcrumbs.push_str(r#"<div id="tree-switcher-menu" title="Tree switcher" role="menu" class="context-menu" style="display: none"></div>"#);
+
     let mut path_so_far = "".to_string();
-    for name in path.split('/') {
-        breadcrumbs.push_str("<span class=\"path-separator\">/</span>");
-        path_so_far.push_str(name);
-        breadcrumbs.push_str(&format!(
-            "<a href=\"{}\">{}</a>",
-            file_url(opt, &path_so_far),
-            name
-        ));
-        path_so_far.push('/');
+
+    if !path.is_empty() {
+        for name in path.split('/') {
+            breadcrumbs.push_str("<span class=\"path-separator\">/</span>");
+            path_so_far.push_str(name);
+            breadcrumbs.push_str(&format!(
+                "<a href=\"{}\">{}</a>",
+                file_url(opt, &path_so_far),
+                name
+            ));
+            path_so_far.push('/');
+        }
     }
 
     if generate_symbol {
@@ -70,12 +75,8 @@ pub fn generate_breadcrumbs(
         ));
     }
 
-    write!(
-        *writer,
-        "<div class=\"breadcrumbs\">{}</div>\n",
-        breadcrumbs
-    )
-    .map_err(|_| "Write err")?;
+    writeln!(*writer, "<div class=\"breadcrumbs\">{}</div>", breadcrumbs)
+        .map_err(|_| "Write err")?;
 
     Ok(())
 }
@@ -107,13 +108,13 @@ pub fn generate_formatted(
     match *formatted {
         F::Indent(ref seq) => {
             for f in seq {
-                generate_formatted(writer, &f, indent + 1)?;
+                generate_formatted(writer, f, indent + 1)?;
             }
             Ok(())
         }
         F::Seq(ref seq) => {
             for f in seq {
-                generate_formatted(writer, &f, indent)?;
+                generate_formatted(writer, f, indent)?;
             }
             Ok(())
         }
@@ -121,14 +122,14 @@ pub fn generate_formatted(
             for _ in 0..indent {
                 write!(writer, "  ").map_err(|_| "Write err")?;
             }
-            write!(writer, "{}\n", text).map_err(|_| "Write err")?;
+            writeln!(writer, "{}", text).map_err(|_| "Write err")?;
             Ok(())
         }
         F::S(text) => {
             for _ in 0..indent {
                 write!(writer, "  ").map_err(|_| "Write err")?;
             }
-            write!(writer, "{}\n", text).map_err(|_| "Write err")?;
+            writeln!(writer, "{}", text).map_err(|_| "Write err")?;
             Ok(())
         }
     }
@@ -310,6 +311,7 @@ pub fn generate_footer(
                 r#"<span id="data" data-root="/" data-search="/{}/search" data-tree="{}" data-path="{}"></span>"#,
                 tree_name, tree_name, path
             )),
+            F::S(r#"<script src="/tree-list.js"></script>"#),
             F::Seq(script_tags),
             F::S("</div>"), // close out #scrolling
             F::S("</body>"),
@@ -347,6 +349,7 @@ pub fn generate_panel(
     opt: &Options,
     writer: &mut dyn Write,
     sections: &[PanelSection],
+    collapsed: bool,
 ) -> Result<(), &'static str> {
     let sections = sections
         .iter()
@@ -365,6 +368,11 @@ pub fn generate_panel(
                     };
                     let accel = if let Some(key) = item.accel_key {
                         format!(r#" <span class="accel">{}</span>"#, key)
+                    } else {
+                        String::new()
+                    };
+                    let data_accel = if let Some(key) = item.accel_key {
+                        format!(r#" data-accel="{key}""#)
                     } else {
                         String::new()
                     };
@@ -390,8 +398,16 @@ pub fn generate_panel(
                     F::Seq(vec![
                         F::S("<li>"),
                         F::T(format!(
-                            r#"<{}{} title="{}" class="icon item"{}>{}{}{}</{}>"#,
-                            tag, href, item.title, update_attr, item.title, accel, copy, tag
+                            r#"<{}{}{} title="{}" class="icon item"{}>{}{}{}</{}>"#,
+                            tag,
+                            href,
+                            data_accel,
+                            item.title,
+                            update_attr,
+                            item.title,
+                            accel,
+                            copy,
+                            tag
                         )),
                         F::S("</li>"),
                     ])
@@ -419,9 +435,10 @@ pub fn generate_panel(
         F::Indent(vec![
             F::S(r#"<button id="panel-toggle">"#),
             F::Indent(vec![
-                F::S(
-                    r#"<span class="navpanel-icon icon-down-dir expanded" aria-hidden="false"></span>"#,
-                ),
+                F::T(format!(
+                    r#"<span class="navpanel-icon icon-down-dir{}" aria-hidden="false"></span>"#,
+                    if collapsed { "" } else { " expanded" }
+                )),
                 F::S("Navigation"),
                 F::T(format!(
                     r#"<a id="show-settings" title="Go to settings page" href="/{}/pages/settings.html"><span class="navpanel-icon icon-cog expanded" aria-hidden="false"></span></a>"#,
@@ -429,7 +446,16 @@ pub fn generate_panel(
                 )),
             ]),
             F::S("</button>"),
-            F::S(r#"<section id="panel-content" aria-expanded="true" aria-hidden="false">"#),
+            F::T(format!(
+                r#"<section id="panel-content" aria-expanded="{}" aria-hidden="{}"{}>"#,
+                if collapsed { "false" } else { "true" },
+                if collapsed { "true" } else { "false" },
+                if collapsed {
+                    r#" style="display: none""#
+                } else {
+                    ""
+                }
+            )),
             F::S(
                 r#"<label class="panel-accel"><input type="checkbox" id="panel-accel-enable" checked="checked">Enable keyboard shortcuts</label>"#,
             ),
@@ -449,8 +475,14 @@ pub fn generate_svg_preview(writer: &mut dyn Write, url: &str) -> Result<(), &'s
         F::S(r#"<div class="svg-preview">"#),
         F::Indent(vec![
             F::S("<h4>SVG Preview (Scaled)</h4>"),
-            F::S(r#"<input type="checkbox" id="svg-preview-checkerboard"/>"#),
-            F::S(r#"<label for="svg-preview-checkerboard">Checkerboard</label>"#),
+            F::S(r#"<input id="svg-preview-background-default" type="radio" name="svg-preview-background" value="default" checked>"#),
+            F::S(r#"<label for="svg-preview-background-default">Default</label>"#),
+            F::S(r#"<input id="svg-preview-background-checkerboard" type="radio" name="svg-preview-background" value="checkerboard">"#),
+            F::S(r#"<label for="svg-preview-background-checkerboard">Checkerboard</label>"#),
+            F::S(r#"<input id="svg-preview-background-light" type="radio" name="svg-preview-background" value="light">"#),
+            F::S(r#"<label for="svg-preview-background-light">Light</label>"#),
+            F::S(r#"<input id="svg-preview-background-dark" type="radio" name="svg-preview-background" value="dark">"#),
+            F::S(r#"<label for="svg-preview-background-dark">Dark</label>"#),
             F::T(format!(r#"<a href="{}">"#, url)),
             F::Indent(vec![F::T(format!(
                 r#"<img src="{0}" alt="Preview of {0}"/>"#,

@@ -1,6 +1,8 @@
 {% include 'header_search.liquid' title: "Searchfox Settings", autofocus: false %}
 <div id="scrolling">
   <div id="content" class="content settings-page" data-no-results="No results for current query.">
+    {% include 'breadcrumbs.liquid' path: "", hidden: true %}
+    {% include 'navigation_panel.liquid' expanded: false %}
     <h1>Searchfox Settings</h1>
     <section>
       <h2>About Searchfox Settings</h2>
@@ -213,6 +215,22 @@
       </section>
     </section>
     <section>
+      <h2>Macro expansions</h2>
+      <p>
+        We're experimenting with exposing C++ macro expansions.  According to our
+        settings code it is
+        <b><span id="quality--semantic-info--enabled"></span></b> quality.
+      </p>
+      <section>
+        <h3>Expansions Feature Gate</h3>
+        <form>
+          <label for="expansions--enabled">Expansions feature gate:</label>
+          <select id="expansions--enabled">
+          </select>
+        </form>
+      </section>
+    </section>
+    <section>
       <h2>Diagramming</h2>
       <p>
         Searchfox has very experimental diagramming functionality.  According to
@@ -228,6 +246,14 @@
           </select>
         </form>
       </section>
+    </section>
+    <section>
+      <h2>Debug</h2>
+
+      <form>
+        <input type="checkbox" id="debug--ui">
+        <label for="debug--ui">Show debugging UI</label>
+      </form>
     </section>
   </div>
   {% include 'scroll_footer.liquid' %}

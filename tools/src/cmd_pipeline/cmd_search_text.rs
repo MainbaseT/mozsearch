@@ -1,7 +1,10 @@
 use async_trait::async_trait;
 use clap::Args;
 
-use super::{interface::{PipelineCommand, PipelineValues}, transforms::path_glob_transform};
+use super::{
+    interface::{PipelineCommand, PipelineValues},
+    transforms::path_glob_transform,
+};
 
 use crate::abstract_server::{AbstractServer, ErrorDetails, ErrorLayer, Result, ServerError};
 
@@ -43,7 +46,7 @@ pub struct SearchTextCommand {
 impl PipelineCommand for SearchTextCommand {
     async fn execute(
         &self,
-        server: &Box<dyn AbstractServer + Send + Sync>,
+        server: &(dyn AbstractServer + Send + Sync),
         _input: PipelineValues,
     ) -> Result<PipelineValues> {
         let re_pattern = if let Some(re) = &self.args.re {
